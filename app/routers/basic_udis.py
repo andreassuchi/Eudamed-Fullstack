@@ -15,11 +15,11 @@ from eudamed_tool.models import BasicUDI
 
 router = APIRouter(prefix="/basic-udis")
 
-BOOL_FIELDS = [
-    "animal_tissues_cells", "human_tissues_cells", "human_product_check",
-    "medicinal_product_check", "administering_medicine", "active",
-    "implantable", "measuring_function", "reusable",
-]
+# Only these two are user-editable; the other seven criteria (implantable,
+# reusable, administering_medicine, tissue/substance flags) are fixed to
+# False for this portfolio — see eudamed_tool.importer.FIXED_FALSE_FIELDS.
+# Absent form fields parse to False, so they are pinned automatically.
+BOOL_FIELDS = ["active", "measuring_function"]
 
 
 @router.get("")

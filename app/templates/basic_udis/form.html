@@ -43,19 +43,12 @@
     <legend>Applicable properties</legend>
     <div class="grid">
       {% for f, label in [
-        ("active", "Active device"), ("implantable", "Implantable"),
-        ("measuring_function", "Measuring function"), ("reusable", "Reusable surgical instrument"),
-        ("administering_medicine", "Administers/removes medicine")] %}
+        ("active", "Active device"), ("measuring_function", "Measuring function")] %}
       <label><input type="checkbox" name="{{ f }}" {% if row and row[f] %}checked{% endif %}> {{ label }}</label>
       {% endfor %}
     </div>
-    <div class="grid">
-      {% for f, label in [
-        ("animal_tissues_cells", "Animal tissues/cells"), ("human_tissues_cells", "Human tissues/cells"),
-        ("human_product_check", "Human blood/plasma derivative"), ("medicinal_product_check", "Medicinal substance")] %}
-      <label><input type="checkbox" name="{{ f }}" {% if row and row[f] %}checked{% endif %}> {{ label }}</label>
-      {% endfor %}
-    </div>
+    <small>Implantable, reusable surgical instrument, administering medicine, and all
+      tissue/substance criteria are fixed to "no" for this portfolio.</small>
   </fieldset>
   <button type="submit">Save</button>
   <a role="button" class="secondary" href="/basic-udis">Cancel</a>

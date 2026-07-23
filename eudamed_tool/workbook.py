@@ -17,6 +17,9 @@ BOOL_VALUES = ["TRUE", "FALSE"]
 
 # sheet name -> ordered list of (column header, required, allowed values or None)
 SHEETS = {
+    # Fixed to FALSE and not workbook columns (see importer.py FIXED_FALSE_FIELDS):
+    # animal_tissues_cells, human_tissues_cells, human_product_check,
+    # medicinal_product_check, administering_medicine, implantable, reusable
     "BasicUDI": [
         ("basic_udi_di", True, None),
         ("issuing_entity_code", True, [e.value for e in IssuingEntityCode]),
@@ -24,15 +27,8 @@ SHEETS = {
         ("risk_class", True, [e.value for e in RiskClass]),
         ("model_name", True, None),
         ("device_type", False, [e.value for e in DeviceType]),
-        ("animal_tissues_cells", False, BOOL_VALUES),
-        ("human_tissues_cells", False, BOOL_VALUES),
-        ("human_product_check", False, BOOL_VALUES),
-        ("medicinal_product_check", False, BOOL_VALUES),
-        ("administering_medicine", False, BOOL_VALUES),
         ("active", False, BOOL_VALUES),
-        ("implantable", False, BOOL_VALUES),
         ("measuring_function", False, BOOL_VALUES),
-        ("reusable", False, BOOL_VALUES),
     ],
     "Devices": [
         ("udi_di", True, None),

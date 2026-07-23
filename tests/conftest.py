@@ -17,7 +17,6 @@ SAMPLE = {
         "model_name": "AcmeFlow Infusion Set",
         "device_type": "DEVICE",
         "active": "FALSE",
-        "reusable": "FALSE",
     }],
     "Devices": [{
         "udi_di": "04012345000012",

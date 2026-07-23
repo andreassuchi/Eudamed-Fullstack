@@ -79,9 +79,20 @@ BOOL_COLUMNS = {
     if allowed == ["TRUE", "FALSE"]
 }
 
+# BasicUDI criteria fixed to FALSE for this portfolio; not workbook columns.
+# The domain model and XML output keep them (XSD-required), always false.
+FIXED_FALSE_FIELDS = {
+    "animal_tissues_cells", "human_tissues_cells", "human_product_check",
+    "medicinal_product_check", "administering_medicine", "implantable", "reusable",
+}
+
 # Columns that older workbooks may still contain; ignored without error.
-# original_placed_on_market is now derived (DE -> TRUE, others -> FALSE).
-LEGACY_IGNORED_COLUMNS = {"MarketCountries": {"original_placed_on_market"}}
+# original_placed_on_market is derived (DE -> TRUE, others -> FALSE);
+# the fixed-false criteria are pinned regardless of what an old workbook says.
+LEGACY_IGNORED_COLUMNS = {
+    "MarketCountries": {"original_placed_on_market"},
+    "BasicUDI": set(FIXED_FALSE_FIELDS),
+}
 
 # Country whose market entry counts as the original placing on the EU market
 ORIGINAL_MARKET_COUNTRY = "DE"
