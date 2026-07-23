@@ -18,7 +18,7 @@ from app.db.orm import (
     ProductionIdentifierORM,
     TradeNameORM,
 )
-from eudamed_tool.importer import ORIGINAL_MARKET_COUNTRY
+from app.config import settings
 from eudamed_tool.models import (
     BasicUDI,
     Device,
@@ -27,6 +27,7 @@ from eudamed_tool.models import (
     Registration,
     TradeName,
 )
+from eudamed_tool.profile import get_profile
 
 BASIC_UDI_FIELDS = [
     "basic_udi_di", "issuing_entity_code", "manufacturer_srn", "risk_class",
@@ -60,10 +61,15 @@ def device_to_domain(row: DeviceORM) -> Device:
         for e in row.emdn_codes
     ]
     data["production_identifiers"] = [p.identifier_type for p in row.production_identifiers]
+    original_country = get_profile(settings.profile).original_market_country
     data["market_countries"] = [
         MarketCountry(
             country_code=m.country_code,
-            original_placed_on_market=(m.country_code == ORIGINAL_MARKET_COUNTRY),
+            # as-consult: derived; universal: stored value
+            original_placed_on_market=(
+                m.country_code == original_country if original_country
+                else m.original_placed_on_market
+            ),
             first_market_date=m.first_market_date,
             withdrawal_date=m.withdrawal_date,
         )
@@ -133,6 +139,7 @@ def apply_device(row: DeviceORM, model: Device, basic: BasicUDIORM) -> DeviceORM
     ]
     row.market_countries = [
         MarketCountryORM(country_code=m.country_code,
+                         original_placed_on_market=m.original_placed_on_market,
                          first_market_date=m.first_market_date,
                          withdrawal_date=m.withdrawal_date)
         for m in model.market_countries

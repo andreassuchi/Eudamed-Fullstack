@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="EUDAMED_", extra="ignore")
 
     database_url: str = "postgresql+psycopg://eudamed:eudamed@localhost:5432/eudamed"
+    # field profile: "as-consult" (portfolio simplifications) or "universal"
+    profile: str = "as-consult"
     output_dir: Path = REPO_ROOT / "output"
     xsd_dir: Path = REPO_ROOT / "xsd"
 

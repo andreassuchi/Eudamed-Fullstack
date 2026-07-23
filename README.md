@@ -33,6 +33,21 @@ alembic upgrade head
 uvicorn app.main:app --reload --port 8090
 ```
 
+## Profiles
+
+The app runs in one of two field profiles (`EUDAMED_PROFILE`, shown in the footer):
+
+- **as-consult** (default) — portfolio simplifications: seven Basic-UDI criteria
+  and five device flags fixed to "no", number of reuses = -1, base quantity = 1,
+  reduced production-identifier selection, originally-placed-on-market derived
+  (DE = yes)
+- **universal** — every field the data model supports is editable, including a
+  per-market-country "original" checkbox
+
+Switch with `EUDAMED_PROFILE=universal docker compose up -d` (restart required).
+Excel templates exist per profile (`templates/eudamed_master_data.xlsx` /
+`..._universal.xlsx`); workbooks from either profile import under both.
+
 ## Features
 
 - **Dashboard** — entity counts, last validation result, recent generation jobs

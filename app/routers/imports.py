@@ -11,8 +11,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.db.session import get_session
-from app.services.excel_import import commit_registration, preview_workbook
-from eudamed_tool.importer import load_registration
+from app.services.excel_import import commit_registration, load_registration, preview_workbook
 from app.web import templates
 
 router = APIRouter(prefix="/import")

@@ -42,13 +42,13 @@
   <fieldset>
     <legend>Applicable properties</legend>
     <div class="grid">
-      {% for f, label in [
-        ("active", "Active device"), ("measuring_function", "Measuring function")] %}
+      {% for f, label in basic_flags %}
       <label><input type="checkbox" name="{{ f }}" {% if row and row[f] %}checked{% endif %}> {{ label }}</label>
       {% endfor %}
     </div>
-    <small>Implantable, reusable surgical instrument, administering medicine, and all
-      tissue/substance criteria are fixed to "no" for this portfolio.</small>
+    {% if profile.fixed_false_basic_fields %}
+    <small>All other criteria are fixed to "no" in the {{ profile.name }} profile.</small>
+    {% endif %}
   </fieldset>
   <button type="submit">Save</button>
   <a role="button" class="secondary" href="/basic-udis">Cancel</a>

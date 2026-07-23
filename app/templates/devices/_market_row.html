@@ -4,6 +4,14 @@
       {% for v in market_countries %}<option value="{{ v }}" {% if v == country %}selected{% endif %}>{{ v }}</option>{% endfor %}
     </select>
   </td>
+  {% if profile.original_market_country is none %}
+  <td style="width:7rem">
+    <input type="hidden" name="mc_original" value="{{ '1' if original else '0' }}">
+    <label style="margin:0"><input type="checkbox"
+      onchange="this.closest('td').querySelector('input[type=hidden]').value = this.checked ? '1' : '0'"
+      {% if original %}checked{% endif %}> original</label>
+  </td>
+  {% endif %}
   <td><input type="date" name="mc_start" title="First on market" value="{{ start }}"></td>
   <td><input type="date" name="mc_end" title="Withdrawn" value="{{ end }}"></td>
   <td style="width:2.5rem"><button type="button" class="secondary outline"

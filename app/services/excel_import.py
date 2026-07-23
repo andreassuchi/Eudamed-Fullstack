@@ -11,11 +11,19 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.services import crud
 from app.services.convert import apply_basic_udi, apply_device
 from app.db.orm import BasicUDIORM, DeviceORM
-from eudamed_tool.importer import ImportIssue, load_registration
+from eudamed_tool.importer import ImportIssue
+from eudamed_tool.importer import load_registration as _load_registration
 from eudamed_tool.models import Registration
+from eudamed_tool.profile import get_profile
+
+
+def load_registration(path: Path):
+    """Profile-aware wrapper used by the import flow."""
+    return _load_registration(path, get_profile(settings.profile))
 
 
 @dataclass

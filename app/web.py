@@ -5,6 +5,7 @@ from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
 
+from app.config import settings
 from eudamed_tool.models import (
     EU_MARKET_COUNTRIES,
     LANGUAGE_CODES,
@@ -13,7 +14,22 @@ from eudamed_tool.models import (
     IssuingEntityCode,
     RiskClass,
 )
-from eudamed_tool.workbook import ALLOWED_PRODUCTION_IDENTIFIERS
+from eudamed_tool.profile import get_profile
+
+PROFILE = get_profile(settings.profile)
+
+# BasicUDI criterion labels shown in forms (display order per profile)
+BASIC_FLAG_LABELS = {
+    "active": "Active device",
+    "implantable": "Implantable",
+    "measuring_function": "Measuring function",
+    "reusable": "Reusable surgical instrument",
+    "administering_medicine": "Administers/removes medicine",
+    "animal_tissues_cells": "Animal tissues/cells",
+    "human_tissues_cells": "Human tissues/cells",
+    "human_product_check": "Human blood/plasma derivative",
+    "medicinal_product_check": "Medicinal substance",
+}
 
 from app import __version__
 
@@ -26,9 +42,11 @@ templates.env.globals.update(
     risk_classes=[e.value for e in RiskClass],
     device_types=[e.value for e in DeviceType],
     device_statuses=[e.value for e in DeviceStatus],
-    pi_types=[e.value for e in ALLOWED_PRODUCTION_IDENTIFIERS],
+    pi_types=[e.value for e in PROFILE.allowed_production_identifiers],
     languages=sorted(LANGUAGE_CODES),
     market_countries=sorted(EU_MARKET_COUNTRIES),
+    profile=PROFILE,
+    basic_flags=[(f, BASIC_FLAG_LABELS[f]) for f in PROFILE.basic_editable_flags],
 )
 
 

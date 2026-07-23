@@ -153,7 +153,9 @@ class MarketCountryORM(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID_T, primary_key=True, default=uuid.uuid4)
     device_id: Mapped[uuid.UUID] = mapped_column(UUID_T, ForeignKey("device.id", ondelete="CASCADE"))
     country_code: Mapped[str] = mapped_column(String(2))
-    # original_placed_on_market is intentionally NOT stored: derived (DE=true)
+    # stored value used by the universal profile; the as-consult profile
+    # derives the flag (DE=true) and ignores/refreshes this column
+    original_placed_on_market: Mapped[bool] = mapped_column(Boolean, default=False)
     first_market_date: Mapped[Optional[date]] = mapped_column(Date)
     withdrawal_date: Mapped[Optional[date]] = mapped_column(Date)
     device: Mapped[DeviceORM] = relationship(back_populates="market_countries")

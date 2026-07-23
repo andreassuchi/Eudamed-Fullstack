@@ -8,18 +8,19 @@ from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
-from .workbook import SHEETS
+from .profile import Profile
+from .workbook import get_sheets
 
 REQUIRED_FILL = PatternFill("solid", fgColor="FCE4D6")  # light orange = mandatory
 HEADER_FONT = Font(bold=True)
 DROPDOWN_ROWS = 200  # rows covered by enum dropdown validation
 
 
-def create_template(path: str | Path) -> Path:
+def create_template(path: str | Path, profile: Profile | None = None) -> Path:
     path = Path(path)
     wb = Workbook()
     wb.remove(wb.active)
-    for sheet_name, columns in SHEETS.items():
+    for sheet_name, columns in get_sheets(profile).items():
         ws = wb.create_sheet(sheet_name)
         for idx, (header, required, allowed) in enumerate(columns, start=1):
             cell = ws.cell(row=1, column=idx, value=header)

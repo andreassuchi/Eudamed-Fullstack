@@ -15,11 +15,11 @@ from eudamed_tool.models import BasicUDI
 
 router = APIRouter(prefix="/basic-udis")
 
-# Only these two are user-editable; the other seven criteria (implantable,
-# reusable, administering_medicine, tissue/substance flags) are fixed to
-# False for this portfolio — see eudamed_tool.importer.FIXED_FALSE_FIELDS.
-# Absent form fields parse to False, so they are pinned automatically.
-BOOL_FIELDS = ["active", "measuring_function"]
+# Editable criteria come from the active profile; fields not offered in the
+# form are absent and parse to False, pinning them automatically.
+from app.web import PROFILE  # noqa: E402
+
+BOOL_FIELDS = list(PROFILE.basic_editable_flags)
 
 
 @router.get("")

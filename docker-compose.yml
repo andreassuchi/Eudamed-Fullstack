@@ -22,6 +22,7 @@ services:
     environment:
       EUDAMED_DATABASE_URL: postgresql+psycopg://eudamed:eudamed@db:5432/eudamed
       EUDAMED_OUTPUT_DIR: /srv/eudamed/output
+      EUDAMED_PROFILE: ${EUDAMED_PROFILE:-as-consult}
     volumes:
       - ./output:/srv/eudamed/output
       - ./backups:/srv/eudamed/backups

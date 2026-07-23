@@ -43,9 +43,32 @@
     <label>Direct marking DI
       <input name="direct_marking_di" value="{{ row.direct_marking_di or '' if row else '' }}">
     </label>
+    {% if profile.device_quantities_editable %}
+    <label>Number of reuses <small>(-1 = n/a, 0 = single use)</small>
+      <input type="number" name="number_of_reuses" min="-1"
+             value="{{ row.number_of_reuses if row else -1 }}">
+    </label>
+    <label>Base quantity
+      <input type="number" name="base_quantity" min="1"
+             value="{{ row.base_quantity if row else 1 }}">
+    </label>
+    {% endif %}
   </div>
-  <small>Fixed for this portfolio: sterile, sterilisation before use, latex, reprocessed
-    and single use are "no"; number of reuses is n/a (-1); base quantity is 1.</small>
+  {% if profile.device_flags_editable %}
+  <fieldset>
+    <legend>Flags</legend>
+    <div class="grid">
+      {% for f, label in [("sterile", "Supplied sterile"), ("sterilization", "Sterilisation before use"),
+                          ("latex", "Contains latex"), ("reprocessed", "Reprocessed single-use"),
+                          ("single_use", "Single use")] %}
+      <label><input type="checkbox" name="{{ f }}" {% if row and row[f] %}checked{% endif %}> {{ label }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  {% else %}
+  <small>Fixed in the {{ profile.name }} profile: sterile, sterilisation before use, latex,
+    reprocessed and single use are "no"; number of reuses is n/a (-1); base quantity is 1.</small>
+  {% endif %}
   <label>Intended purpose
     <textarea name="intended_purpose" rows="2">{{ row.intended_purpose or '' if row else '' }}</textarea>
   </label>
@@ -84,10 +107,14 @@
   </fieldset>
 
   <fieldset>
-    <legend>Market countries * <small>(originally placed on market is derived: DE=yes)</small></legend>
+    <legend>Market countries *
+      {% if profile.original_market_country %}
+      <small>(originally placed on market is derived: {{ profile.original_market_country }}=yes)</small>
+      {% endif %}
+    </legend>
     <table class="child-table" id="market-countries">
       {% if row %}{% for m in row.market_countries %}
-        {% with country=m.country_code, start=m.first_market_date or "", end=m.withdrawal_date or "" %}{% include "devices/_market_row.html" %}{% endwith %}
+        {% with country=m.country_code, start=m.first_market_date or "", end=m.withdrawal_date or "", original=m.original_placed_on_market %}{% include "devices/_market_row.html" %}{% endwith %}
       {% endfor %}{% endif %}
     </table>
     <button type="button" class="secondary outline" hx-get="/devices/partials/market-row"

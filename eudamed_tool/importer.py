@@ -1,7 +1,9 @@
 """Read the Excel master-data workbook into the typed Registration model.
 
-Every problem is reported as an ImportIssue with sheet / row / column context so
-the user can fix the workbook cell by cell. Pydantic validation errors are
+Profile-aware (see profile.py): fields fixed by the active profile are not
+read from the workbook — legacy columns for them are tolerated but ignored.
+Every problem is reported as an ImportIssue with sheet / row / column context
+so the user can fix the workbook cell by cell. Pydantic validation errors are
 translated into the same issue format.
 """
 from __future__ import annotations
@@ -15,10 +17,23 @@ from openpyxl import load_workbook
 from pydantic import ValidationError
 
 from .models import BasicUDI, Device, EMDNCode, MarketCountry, ProductionIdentifierType, Registration, TradeName
-from .workbook import SHEETS
+from .profile import ALL_BASIC_FLAGS, DEVICE_FLAG_FIELDS, Profile, get_profile
+from .workbook import get_sheets
 
 TRUE_VALUES = {"true", "yes", "y", "1", "x"}
 FALSE_VALUES = {"false", "no", "n", "0", ""}
+
+# Backwards-compatible constant (as-consult rule); profile-aware code should
+# use profile.original_market_country instead.
+ORIGINAL_MARKET_COUNTRY = "DE"
+
+# The complete set of columns any profile may fix — a workbook written under
+# another profile is tolerated: its extra columns are ignored, never an error.
+_ALL_FIXABLE = {
+    "BasicUDI": set(ALL_BASIC_FLAGS),
+    "Devices": set(DEVICE_FLAG_FIELDS) | {"number_of_reuses", "base_quantity"},
+    "MarketCountries": {"original_placed_on_market"},
+}
 
 
 @dataclass
@@ -72,47 +87,15 @@ def _parse_bool(raw: str, sheet: str, row: int, column: str, issues: List[Import
     return None
 
 
-BOOL_COLUMNS = {
-    header
-    for columns in SHEETS.values()
-    for header, _req, allowed in columns
-    if allowed == ["TRUE", "FALSE"]
-}
-
-# BasicUDI criteria fixed to FALSE for this portfolio; not workbook columns.
-# The domain model and XML output keep them (XSD-required), always false.
-FIXED_FALSE_FIELDS = {
-    "animal_tissues_cells", "human_tissues_cells", "human_product_check",
-    "medicinal_product_check", "administering_medicine", "implantable", "reusable",
-}
-
-# Device fields fixed for this portfolio; not workbook columns.
-# Flags always FALSE; number_of_reuses = -1 (not defined); base_quantity = 1.
-FIXED_DEVICE_FIELDS = {
-    "sterile", "sterilization", "latex", "reprocessed", "single_use",
-    "number_of_reuses", "base_quantity",
-}
-
-# Columns that older workbooks may still contain; ignored without error.
-# original_placed_on_market is derived (DE -> TRUE, others -> FALSE);
-# fixed criteria/values are pinned regardless of what an old workbook says.
-LEGACY_IGNORED_COLUMNS = {
-    "MarketCountries": {"original_placed_on_market"},
-    "BasicUDI": set(FIXED_FALSE_FIELDS),
-    "Devices": set(FIXED_DEVICE_FIELDS),
-}
-
-# Country whose market entry counts as the original placing on the EU market
-ORIGINAL_MARKET_COUNTRY = "DE"
-
-
-def _read_sheet(ws, sheet_name: str, issues: List[ImportIssue]) -> List[Tuple[int, Dict[str, Any]]]:
+def _read_sheet(ws, sheet_name: str, columns, bool_columns, ignored,
+                issues: List[ImportIssue]) -> List[Tuple[int, Dict[str, Any]]]:
     """Return [(excel_row, {header: value})] for non-empty rows, validating headers."""
-    expected = [h for h, _r, _a in SHEETS[sheet_name]]
+    expected = [h for h, _r, _a in columns]
+    required = [h for h, r, _a in columns if r]
     header_row = [(_cell_to_str(c.value) or "") for c in ws[1]]
     header_row = [h for h in header_row if h]
-    ignored = LEGACY_IGNORED_COLUMNS.get(sheet_name, set())
-    missing = [h for h in expected if h not in header_row]
+    # only required columns must exist; optional ones may be absent
+    missing = [h for h in required if h not in header_row]
     unknown = [h for h in header_row if h not in expected and h not in ignored]
     if missing:
         issues.append(ImportIssue(sheet_name, 1, None, f"missing column(s): {', '.join(missing)}"))
@@ -121,16 +104,17 @@ def _read_sheet(ws, sheet_name: str, issues: List[ImportIssue]) -> List[Tuple[in
     if missing:
         return []
     col_index = {h: i for i, h in enumerate(header_row)}
+    present = [h for h in expected if h in col_index]
     rows: List[Tuple[int, Dict[str, Any]]] = []
     for excel_row, values in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         record: Dict[str, Any] = {}
-        for header in expected:
+        for header in present:
             idx = col_index[header]
             raw = values[idx] if idx < len(values) else None
             s = _cell_to_str(raw)
             if s is None:
                 continue
-            if header in BOOL_COLUMNS:
+            if header in bool_columns:
                 b = _parse_bool(s, sheet_name, excel_row, header, issues)
                 if b is not None:
                     record[header] = b
@@ -147,19 +131,27 @@ def _pydantic_issues(err: ValidationError, sheet: str, row: int, issues: List[Im
         issues.append(ImportIssue(sheet, row, column, e["msg"]))
 
 
-def load_registration(path: str | Path) -> ImportResult:
+def load_registration(path: str | Path, profile: Optional[Profile] = None) -> ImportResult:
+    p = profile or get_profile()
+    sheets = get_sheets(p)
+    bool_columns = {h for cols in sheets.values() for h, _r, allowed in cols
+                    if allowed == ["TRUE", "FALSE"]}
     path = Path(path)
     issues: List[ImportIssue] = []
     if not path.exists():
         return ImportResult(None, [ImportIssue("workbook", None, None, f"file not found: {path}")])
     wb = load_workbook(path, data_only=True)
 
-    missing_sheets = [s for s in SHEETS if s not in wb.sheetnames]
+    missing_sheets = [s for s in sheets if s not in wb.sheetnames]
     if missing_sheets:
         issues.append(ImportIssue("workbook", None, None, f"missing sheet(s): {', '.join(missing_sheets)}"))
         return ImportResult(None, issues)
 
-    raw = {name: _read_sheet(wb[name], name, issues) for name in SHEETS}
+    raw = {}
+    for name, columns in sheets.items():
+        expected = {h for h, _r, _a in columns}
+        ignored = _ALL_FIXABLE.get(name, set()) - expected
+        raw[name] = _read_sheet(wb[name], name, columns, bool_columns, ignored, issues)
 
     basic_udis: List[BasicUDI] = []
     for row, record in raw["BasicUDI"]:
@@ -214,10 +206,12 @@ def load_registration(path: str | Path) -> ImportResult:
                                           f"invalid identifier_type '{crec.get('identifier_type')}'"))
         record["market_countries"] = []
         for crow, crec in markets.pop(udi, []):
-            # derived, never read from the workbook: DE is the original market
-            crec["original_placed_on_market"] = (
-                crec.get("country_code") == ORIGINAL_MARKET_COUNTRY
-            )
+            if p.original_market_country is not None:
+                # derived: the configured country is the original market
+                crec["original_placed_on_market"] = (
+                    crec.get("country_code") == p.original_market_country
+                )
+            # else: taken from the workbook column (default False if absent)
             try:
                 record["market_countries"].append(MarketCountry(**crec))
             except ValidationError as err:

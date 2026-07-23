@@ -10,8 +10,9 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_session
 from app.services import crud
-from app.web import form_bool, form_opt, form_str, templates
+from app.web import PROFILE, form_bool, form_opt, form_str, templates
 from eudamed_tool.models import Device, EMDNCode, MarketCountry, TradeName
+from eudamed_tool.profile import DEVICE_FLAG_FIELDS
 
 router = APIRouter(prefix="/devices")
 
@@ -66,7 +67,8 @@ def emdn_row(request: Request):
 @router.get("/partials/market-row")
 def market_row(request: Request):
     return templates.TemplateResponse(request, "devices/_market_row.html",
-                                      {"country": "DE", "start": "", "end": ""})
+                                      {"country": "DE", "start": "", "end": "",
+                                       "original": False})
 
 
 # --- form handling ------------------------------------------------------------
@@ -87,18 +89,26 @@ async def _model_from_form(request: Request) -> Device:
         for code, desc in zip(getlist("emdn_code"), getlist("emdn_description"))
         if code.strip()
     ]
+    # universal profile: per-row hidden field mc_original ("0"/"1", kept in
+    # sync with its checkbox) aligns positionally with mc_country;
+    # as-consult: derived from the profile's original market country
+    countries = getlist("mc_country")
+    originals = getlist("mc_original") or ["0"] * len(countries)
     market_countries = [
         MarketCountry(
             country_code=c,
+            original_placed_on_market=(
+                c == PROFILE.original_market_country
+                if PROFILE.original_market_country else orig == "1"
+            ),
             first_market_date=(start or None),
             withdrawal_date=(end or None),
         )
-        for c, start, end in zip(getlist("mc_country"), getlist("mc_start"), getlist("mc_end"))
+        for c, orig, start, end in zip(countries, originals,
+                                       getlist("mc_start"), getlist("mc_end"))
         if c.strip()
     ]
-    # sterile/sterilization/latex/reprocessed/single_use, number_of_reuses (-1)
-    # and base_quantity (1) are fixed portfolio values -> model defaults apply.
-    return Device(
+    data = dict(
         udi_di=form_str(form, "udi_di"),
         issuing_entity_code=form_str(form, "issuing_entity_code"),
         basic_udi_di=form_str(form, "basic_udi_di"),
@@ -112,6 +122,13 @@ async def _model_from_form(request: Request) -> Device:
         production_identifiers=getlist("production_identifiers"),
         market_countries=market_countries,
     )
+    if PROFILE.device_flags_editable:
+        data.update({f: form_bool(form, f) for f in DEVICE_FLAG_FIELDS})
+    if PROFILE.device_quantities_editable:
+        data["number_of_reuses"] = int(form_str(form, "number_of_reuses", "-1"))
+        data["base_quantity"] = int(form_str(form, "base_quantity", "1"))
+    # otherwise the fixed model defaults apply (flags False, -1, 1)
+    return Device(**data)
 
 
 def _form_errors(exc: ValidationError) -> list[str]:
