@@ -64,6 +64,12 @@ def test_import_upload_preview_commit(client, tmp_path):
     assert "04012345000012" in client.get("/devices").text
 
 
+def test_device_list_filter_reset(client):
+    # regression: "All Basic UDI-DIs" submits basic_udi_id="" -> must not 422
+    assert client.get("/devices?basic_udi_id=").status_code == 200
+    assert client.get("/devices?basic_udi_id=not-a-uuid").status_code == 200
+
+
 def test_generation_endpoint_blocked_without_data(client):
     r = client.post("/generation/generate")
     assert r.status_code == 200

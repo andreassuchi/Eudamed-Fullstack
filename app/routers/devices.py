@@ -17,12 +17,17 @@ router = APIRouter(prefix="/devices")
 
 
 @router.get("")
-def list_page(request: Request, basic_udi_id: uuid.UUID | None = None,
+def list_page(request: Request, basic_udi_id: str = "",
               session: Session = Depends(get_session)):
+    # "" comes from the "All Basic UDI-DIs" filter option; ignore bad values
+    try:
+        filter_id = uuid.UUID(basic_udi_id) if basic_udi_id else None
+    except ValueError:
+        filter_id = None
     return templates.TemplateResponse(request, "devices/list.html", {
-        "rows": crud.list_devices(session, basic_udi_id),
+        "rows": crud.list_devices(session, filter_id),
         "basics": crud.list_basic_udis(session),
-        "filter_basic_id": basic_udi_id,
+        "filter_basic_id": filter_id,
     })
 
 
