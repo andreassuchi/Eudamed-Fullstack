@@ -1,0 +1,11 @@
+<tr>
+  <td style="width:8rem">
+    <select name="mc_country">
+      {% for v in market_countries %}<option value="{{ v }}" {% if v == country %}selected{% endif %}>{{ v }}</option>{% endfor %}
+    </select>
+  </td>
+  <td><input type="date" name="mc_start" title="First on market" value="{{ start }}"></td>
+  <td><input type="date" name="mc_end" title="Withdrawn" value="{{ end }}"></td>
+  <td style="width:2.5rem"><button type="button" class="secondary outline"
+      onclick="this.closest('tr').remove()">✕</button></td>
+</tr>

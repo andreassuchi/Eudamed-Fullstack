@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}EUDAMED{% endblock %} — EUDAMED Fullstack</title>
+  <link rel="stylesheet" href="/static/pico.min.css">
+  <script src="/static/htmx.min.js" defer></script>
+  <style>
+    .severity-ERROR { color: #d32f2f; font-weight: 600; }
+    .severity-WARNING { color: #ed6c02; font-weight: 600; }
+    .status-READY_FOR_UPLOAD { color: #2e7d32; font-weight: 600; }
+    .status-VALIDATION_FAILED, .status-XSD_VALIDATION_FAILED { color: #d32f2f; font-weight: 600; }
+    table { font-size: 0.9rem; }
+    .child-table input, .child-table select { margin-bottom: 0; }
+    nav strong { margin-right: 1rem; }
+  </style>
+</head>
+<body>
+<main class="container">
+  <nav>
+    <ul>
+      <li><strong>EUDAMED</strong></li>
+      <li><a href="/">Dashboard</a></li>
+      <li><a href="/basic-udis">Basic UDI-DIs</a></li>
+      <li><a href="/devices">Devices</a></li>
+      <li><a href="/import">Import</a></li>
+      <li><a href="/generation">Validate &amp; Generate</a></li>
+    </ul>
+  </nav>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Excel import{% endblock %}
+{% block content %}
+<h2>Excel import</h2>
+<p>Upload a master-data workbook (same layout as <code>templates/eudamed_master_data.xlsx</code>).
+   Existing entries are updated by their Basic UDI-DI / UDI-DI; new ones are created.</p>
+<form hx-post="/import/preview" hx-target="#preview" hx-encoding="multipart/form-data">
+  <input type="file" name="workbook" accept=".xlsx" required>
+  <button type="submit">Upload &amp; preview</button>
+</form>
+<div id="preview"></div>
+{% endblock %}

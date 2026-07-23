@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ row.udi_di if row else "New device" }}{% endblock %}
+{% block content %}
+<h2>{{ "Edit" if row else "New" }} device</h2>
+{% for e in errors %}<article style="border-color:#d32f2f"><small>{{ e }}</small></article>{% endfor %}
+<form method="post" action="{{ '/devices/' + (row.id | string) if row else '/devices/new' }}">
+  <div class="grid">
+    <label>UDI-DI *
+      <input name="udi_di" required maxlength="120" value="{{ row.udi_di if row else '' }}">
+    </label>
+    <label>Issuing entity *
+      <select name="issuing_entity_code" required>
+        {% for v in issuing_entities %}
+        <option value="{{ v }}" {% if row and row.issuing_entity_code.value == v %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Basic UDI-DI *
+      <select name="basic_udi_di" required>
+        {% for b in basics %}
+        <option value="{{ b.basic_udi_di }}"
+          {% if row and row.basic_udi.basic_udi_di == b.basic_udi_di %}selected{% endif %}>{{ b.basic_udi_di }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="grid">
+    <label>Reference / catalogue number *
+      <input name="reference_number" required maxlength="255" value="{{ row.reference_number if row else '' }}">
+    </label>
+    <label>Status *
+      <select name="device_status">
+        {% for v in device_statuses %}
+        <option value="{{ v }}" {% if row and row.device_status.value == v %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="grid">
+    <label>Number of reuses * <small>(-1 = n/a, 0 = single use)</small>
+      <input type="number" name="number_of_reuses" min="-1" required
+             value="{{ row.number_of_reuses if row else 0 }}">
+    </label>
+    <label>Base quantity *
+      <input type="number" name="base_quantity" min="1" required
+             value="{{ row.base_quantity if row else 1 }}">
+    </label>
+    <label>Software version
+      <input name="software_version" value="{{ row.software_version or '' if row else '' }}">
+    </label>
+    <label>Direct marking DI
+      <input name="direct_marking_di" value="{{ row.direct_marking_di or '' if row else '' }}">
+    </label>
+  </div>
+  <fieldset>
+    <legend>Flags</legend>
+    <div class="grid">
+      {% for f, label in [("sterile", "Supplied sterile"), ("sterilization", "Sterilisation before use"),
+                          ("latex", "Contains latex"), ("reprocessed", "Reprocessed single-use"),
+                          ("single_use", "Single use")] %}
+      <label><input type="checkbox" name="{{ f }}" {% if row and row[f] %}checked{% endif %}> {{ label }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <label>Intended purpose
+    <textarea name="intended_purpose" rows="2">{{ row.intended_purpose or '' if row else '' }}</textarea>
+  </label>
+
+  <fieldset>
+    <legend>Production identifiers (UDI-PI) *</legend>
+    <div class="grid">
+      {% for v in pi_types %}
+      <label><input type="checkbox" name="production_identifiers" value="{{ v }}"
+        {% if row and v in (row.production_identifiers | map(attribute="identifier_type.value") | list) %}checked{% endif %}>
+        {{ v }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Trade names</legend>
+    <table class="child-table" id="trade-names">
+      {% if row %}{% for t in row.trade_names %}
+        {% with language=t.language_code, text=t.trade_name %}{% include "devices/_trade_name_row.html" %}{% endwith %}
+      {% endfor %}{% endif %}
+    </table>
+    <button type="button" class="secondary outline" hx-get="/devices/partials/trade-name-row"
+            hx-target="#trade-names" hx-swap="beforeend">+ Add trade name</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>EMDN codes *</legend>
+    <table class="child-table" id="emdn-codes">
+      {% if row %}{% for e in row.emdn_codes %}
+        {% with code=e.emdn_code, description=e.emdn_description or "" %}{% include "devices/_emdn_row.html" %}{% endwith %}
+      {% endfor %}{% endif %}
+    </table>
+    <button type="button" class="secondary outline" hx-get="/devices/partials/emdn-row"
+            hx-target="#emdn-codes" hx-swap="beforeend">+ Add EMDN code</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Market countries * <small>(originally placed on market is derived: DE=yes)</small></legend>
+    <table class="child-table" id="market-countries">
+      {% if row %}{% for m in row.market_countries %}
+        {% with country=m.country_code, start=m.first_market_date or "", end=m.withdrawal_date or "" %}{% include "devices/_market_row.html" %}{% endwith %}
+      {% endfor %}{% endif %}
+    </table>
+    <button type="button" class="secondary outline" hx-get="/devices/partials/market-row"
+            hx-target="#market-countries" hx-swap="beforeend">+ Add market country</button>
+  </fieldset>
+
+  <button type="submit">Save</button>
+  <a role="button" class="secondary" href="/devices">Cancel</a>
+</form>
+{% endblock %}

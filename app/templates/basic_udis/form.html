@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ row.basic_udi_di if row else "New Basic UDI-DI" }}{% endblock %}
+{% block content %}
+<h2>{{ "Edit" if row else "New" }} Basic UDI-DI</h2>
+{% for e in errors %}<article style="border-color:#d32f2f"><small>{{ e }}</small></article>{% endfor %}
+<form method="post" action="{{ '/basic-udis/' + (row.id | string) if row else '/basic-udis/new' }}">
+  <div class="grid">
+    <label>Basic UDI-DI *
+      <input name="basic_udi_di" required maxlength="120" value="{{ row.basic_udi_di if row else '' }}">
+    </label>
+    <label>Issuing entity *
+      <select name="issuing_entity_code" required>
+        {% for v in issuing_entities %}
+        <option value="{{ v }}" {% if row and row.issuing_entity_code.value == v %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="grid">
+    <label>Manufacturer SRN *
+      <input name="manufacturer_srn" required placeholder="DE-MF-000012345"
+             value="{{ row.manufacturer_srn if row else '' }}">
+    </label>
+    <label>Risk class *
+      <select name="risk_class" required>
+        {% for v in risk_classes %}
+        <option value="{{ v }}" {% if row and row.risk_class.value == v %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Type *
+      <select name="device_type">
+        {% for v in device_types %}
+        <option value="{{ v }}" {% if row and row.device_type.value == v %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <label>Model / device name *
+    <input name="model_name" required maxlength="255" value="{{ row.model_name if row else '' }}">
+  </label>
+  <fieldset>
+    <legend>Applicable properties</legend>
+    <div class="grid">
+      {% for f, label in [
+        ("active", "Active device"), ("implantable", "Implantable"),
+        ("measuring_function", "Measuring function"), ("reusable", "Reusable surgical instrument"),
+        ("administering_medicine", "Administers/removes medicine")] %}
+      <label><input type="checkbox" name="{{ f }}" {% if row and row[f] %}checked{% endif %}> {{ label }}</label>
+      {% endfor %}
+    </div>
+    <div class="grid">
+      {% for f, label in [
+        ("animal_tissues_cells", "Animal tissues/cells"), ("human_tissues_cells", "Human tissues/cells"),
+        ("human_product_check", "Human blood/plasma derivative"), ("medicinal_product_check", "Medicinal substance")] %}
+      <label><input type="checkbox" name="{{ f }}" {% if row and row[f] %}checked{% endif %}> {{ label }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <button type="submit">Save</button>
+  <a role="button" class="secondary" href="/basic-udis">Cancel</a>
+</form>
+{% endblock %}

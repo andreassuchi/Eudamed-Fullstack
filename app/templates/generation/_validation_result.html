@@ -1,0 +1,25 @@
+<article>
+  <header>
+    Validation {{ run.started_at.strftime("%Y-%m-%d %H:%M:%S") }} —
+    {% if run.blocking %}<span class="severity-ERROR">BLOCKED</span>{% else %}<strong>PASSED</strong>{% endif %}
+    ({{ run.error_count }} errors, {{ run.warning_count }} warnings)
+  </header>
+  {% if run.results %}
+  <table>
+    <thead><tr><th>Rule</th><th>Severity</th><th>Entity</th><th>Message</th><th>Correction</th></tr></thead>
+    <tbody>
+    {% for f in run.results %}
+      <tr>
+        <td>{{ f.rule_code }}</td>
+        <td class="severity-{{ f.severity }}">{{ f.severity }}</td>
+        <td>{{ f.entity }}</td>
+        <td>{{ f.message }}</td>
+        <td><small>{{ f.recommended_correction or "" }}</small></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No findings — all rules passed.</p>
+  {% endif %}
+</article>

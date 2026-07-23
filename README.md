@@ -1,18 +1,63 @@
 # EUDAMED Fullstack
 
-Full-stack variant of the EUDAMED MDR registration tooling: persistent master
-data, a web service, and managed XML generation — built on the proven core
-engine from the lean pipeline ([Eudamed-Upload](https://github.com/andreassuchi/Eudamed-Upload)).
+Full-stack variant of the EUDAMED MDR registration tooling: device master data
+in PostgreSQL, a server-rendered web UI (FastAPI + Jinja2 + HTMX), and managed
+validation / XML-generation workflows with an audit trail — built on the proven
+core engine from the lean pipeline
+([Eudamed-Upload](https://github.com/andreassuchi/Eudamed-Upload)).
 
-Status: **project scaffold — architecture planning in progress.**
+```text
+Browser (Jinja2 + HTMX)
+  → FastAPI routers → services (CRUD, validation, generation, Excel import)
+  → eudamed_tool domain engine (VAL rules, DTX Push XML v3.0.30, XSD validation)
+  → PostgreSQL (SQLAlchemy 2 + Alembic)
+```
 
-## Taken over from the lean pipeline
+## Run it
 
-- `eudamed_tool/` — core engine: typed models (official vocabularies),
-  rule-based validation (VAL-001…VAL-012), DTX Push XML generator
-  (schema v3.0.30), XSD validator, Excel importer
-- `xsd/` — official EUDAMED DTX XSD package (entry `service/Message.xsd`)
-- `tests/` — pytest suite incl. official-XSD round-trip
-- `templates/` — Excel master-data workbook (blank + demo)
-- `docs/` — BRD, SRS, data dictionary, validation rules, XML mapping spec,
-  traceability matrix, PostgreSQL DDL baseline
+```text
+docker compose up --build
+```
+
+Then open <http://localhost:8000>. The app container migrates the database
+automatically on startup. Generated XML lands in `./output/` on the host.
+
+Local development without Docker (needs a running PostgreSQL, see `.env.example`):
+
+```text
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload
+```
+
+## Features
+
+- **Dashboard** — entity counts, last validation result, recent generation jobs
+- **Basic UDI-DIs / Devices** — full CRUD forms with the official EUDAMED
+  vocabularies as dropdowns; child rows (trade names, EMDN codes, production
+  identifiers, market countries) managed inline via HTMX
+- **Excel import** — upload the master-data workbook → preview
+  (issues or create/update summary) → one-transaction commit
+- **Validate & Generate** — runs rule engine VAL-001…VAL-012, persists findings;
+  XML generation is refused on blocking errors (BR-009), output is validated
+  against the official XSD package, and every job is logged with SHA-256 hashes
+  (status `READY_FOR_UPLOAD` only when XSD validation passed)
+
+## Repository layout
+
+- `app/` — FastAPI application (routers, services, ORM, templates)
+- `eudamed_tool/` — domain engine shared with the lean pipeline (do not fork:
+  keep changes in sync with Eudamed-Upload)
+- `xsd/` — official EUDAMED DTX XSD package v3.0.30
+- `alembic/` — database migrations
+- `templates/` — Excel workbook templates (blank + demo) for the import
+- `tests/` — engine tests + service/API tests (SQLite-backed, no DB needed)
+- `docs/` — BRD, SRS, data dictionary, validation rules, XML mapping spec
+
+## Regulatory notes
+
+- Upload generated XML to the **EUDAMED playground environment** before production.
+- `originalPlacedOnTheMarket` is derived (DE = true, others = false) — see
+  `eudamed_tool/importer.py` (`ORIGINAL_MARKET_COUNTRY`).
+- Optional MDR data (substances, packaging levels, AR actor for non-EU
+  manufacturers, Annex XVI) is not yet mapped — see `docs/XML_Mapping_Spec.md`.

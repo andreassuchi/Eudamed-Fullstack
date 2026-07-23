@@ -13,6 +13,9 @@ EUDAMED-Upload-portable.zip
 templates/eudamed_data_test_iba.xlsx
 templates/test.xlsx
 
+# Local environment
+.env
+
 # Editor/OS
 .vscode/
 Thumbs.db

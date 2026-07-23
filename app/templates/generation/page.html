@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Validate & Generate{% endblock %}
+{% block content %}
+<h2>Validate &amp; Generate</h2>
+<div class="grid">
+  <button hx-post="/generation/validate" hx-target="#validation-result">Run validation</button>
+  <button hx-post="/generation/generate" hx-target="#validation-result"
+          hx-confirm="Run validation and generate the upload XML?">Validate + generate XML</button>
+</div>
+<div id="validation-result">
+  {% if last_validation %}
+    {% with run = last_validation %}{% include "generation/_validation_result.html" %}{% endwith %}
+  {% endif %}
+</div>
+
+<h4>Generation history</h4>
+{% if jobs %}
+<table>
+  <thead><tr><th>Requested</th><th>Status</th><th>Devices</th><th>XSD</th><th>SHA-256</th><th></th></tr></thead>
+  <tbody>
+  {% for j in jobs %}
+    <tr>
+      <td>{{ j.requested_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+      <td class="status-{{ j.status }}">{{ j.status }}</td>
+      <td>{{ j.device_count }}</td>
+      <td>{{ j.xsd_status or "—" }}</td>
+      <td><small>{{ (j.xml_sha256 or "")[:16] }}</small></td>
+      <td>{% if j.xml_path %}<a href="/generation/jobs/{{ j.id }}/download">Download XML</a>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p>No generation jobs yet.</p>{% endif %}
+{% endblock %}

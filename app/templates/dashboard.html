@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h2>Dashboard</h2>
+<div class="grid">
+  <article><h4>{{ n_basics }}</h4>Basic UDI-DIs</article>
+  <article><h4>{{ n_devices }}</h4>Devices</article>
+  <article>
+    <h4>
+      {% if last_validation %}
+        {% if last_validation.blocking %}BLOCKED{% else %}PASSED{% endif %}
+      {% else %}—{% endif %}
+    </h4>
+    Last validation
+    {% if last_validation %}
+      <small>({{ last_validation.error_count }} errors, {{ last_validation.warning_count }} warnings)</small>
+    {% endif %}
+  </article>
+</div>
+
+<h4>Recent generation jobs</h4>
+{% if jobs %}
+<table>
+  <thead><tr><th>Requested</th><th>Status</th><th>Devices</th><th>XSD</th><th>SHA-256</th><th></th></tr></thead>
+  <tbody>
+  {% for j in jobs %}
+    <tr>
+      <td>{{ j.requested_at.strftime("%Y-%m-%d %H:%M") }}</td>
+      <td class="status-{{ j.status }}">{{ j.status }}</td>
+      <td>{{ j.device_count }}</td>
+      <td>{{ j.xsd_status or "—" }}</td>
+      <td><small>{{ (j.xml_sha256 or "")[:12] }}</small></td>
+      <td>{% if j.xml_path %}<a href="/generation/jobs/{{ j.id }}/download">XML</a>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p>No generation jobs yet.</p>{% endif %}
+{% endblock %}

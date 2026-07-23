@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Basic UDI-DIs{% endblock %}
+{% block content %}
+<h2>Basic UDI-DIs</h2>
+{% for e in errors or [] %}<article style="border-color:#d32f2f"><small>{{ e }}</small></article>{% endfor %}
+<p><a role="button" href="/basic-udis/new">+ New Basic UDI-DI</a></p>
+<table>
+  <thead><tr><th>Basic UDI-DI</th><th>Model name</th><th>Risk class</th><th>Type</th><th>Devices</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td><a href="/basic-udis/{{ r.id }}">{{ r.basic_udi_di }}</a></td>
+      <td>{{ r.model_name }}</td>
+      <td>{{ r.risk_class.value }}</td>
+      <td>{{ r.device_type.value }}</td>
+      <td><a href="/devices?basic_udi_id={{ r.id }}">{{ r.devices | length }}</a></td>
+      <td>
+        <form method="post" action="/basic-udis/{{ r.id }}/delete" style="display:inline"
+              onsubmit="return confirm('Delete {{ r.basic_udi_di }}?')">
+          <button class="secondary outline" style="padding:0.1rem 0.5rem">✕</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6">No Basic UDI-DIs yet — create one or use the Excel import.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

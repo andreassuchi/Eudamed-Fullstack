@@ -1,0 +1,18 @@
+<article>
+  <header>Generation job — <span class="status-{{ job.status }}">{{ job.status }}</span></header>
+  <ul>
+    <li>Devices in message: {{ job.device_count }}</li>
+    {% if job.xsd_status %}<li>XSD validation: {{ job.xsd_status }}</li>{% endif %}
+    {% if job.xml_sha256 %}<li>XML SHA-256: <code>{{ job.xml_sha256 }}</code></li>{% endif %}
+  </ul>
+  {% if job.xsd_errors %}
+  <details><summary>XSD errors</summary>
+    <ul>{% for e in job.xsd_errors["errors"] %}<li><small>{{ e }}</small></li>{% endfor %}</ul>
+  </details>
+  {% endif %}
+  {% if job.status == "READY_FOR_UPLOAD" %}
+  <p><a role="button" href="/generation/jobs/{{ job.id }}/download">Download device_upload.xml</a>
+     — upload it in the EUDAMED web UI (playground first!).</p>
+  {% endif %}
+</article>
+{% if run %}{% include "generation/_validation_result.html" %}{% endif %}
