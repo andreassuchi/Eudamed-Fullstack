@@ -24,13 +24,10 @@ SAMPLE = {
         "basic_udi_di": "B-GS1-XYZ-0001-AB",
         "reference_number": "AF-100",
         "device_status": "ON_THE_MARKET",
-        "sterile": "TRUE",
-        "number_of_reuses": 0,
-        "base_quantity": 1,
     }],
     "TradeNames": [{"udi_di": "04012345000012", "language_code": "EN", "trade_name": "AcmeFlow"}],
     "EMDN": [{"udi_di": "04012345000012", "emdn_code": "A0101"}],
-    "ProductionIdentifiers": [{"udi_di": "04012345000012", "identifier_type": "BATCH_NUMBER"}],
+    "ProductionIdentifiers": [{"udi_di": "04012345000012", "identifier_type": "SERIALISATION_NUMBER"}],
     "MarketCountries": [{"udi_di": "04012345000012", "country_code": "DE"}],
 }
 

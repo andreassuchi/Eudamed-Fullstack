@@ -149,9 +149,11 @@ class Device(StrictModel):
     device_status: DeviceStatus = DeviceStatus.ON_THE_MARKET
     sterile: bool = False
     sterilization: bool = False
-    # udidi: -1 = not applicable, 0 = single-use, >0 = limited number of reuses
-    number_of_reuses: int = Field(ge=-1)
-    base_quantity: int = Field(gt=0)
+    # udidi: -1 = not applicable, 0 = single-use, >0 = limited number of reuses.
+    # Fixed to -1 for this portfolio (not editable via workbook/UI).
+    number_of_reuses: int = Field(default=-1, ge=-1)
+    # Fixed to 1 for this portfolio (not editable via workbook/UI).
+    base_quantity: int = Field(default=1, gt=0)
     latex: bool = False
     reprocessed: bool = False
     intended_purpose: Optional[str] = None

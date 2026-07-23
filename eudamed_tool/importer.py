@@ -86,12 +86,20 @@ FIXED_FALSE_FIELDS = {
     "medicinal_product_check", "administering_medicine", "implantable", "reusable",
 }
 
+# Device fields fixed for this portfolio; not workbook columns.
+# Flags always FALSE; number_of_reuses = -1 (not defined); base_quantity = 1.
+FIXED_DEVICE_FIELDS = {
+    "sterile", "sterilization", "latex", "reprocessed", "single_use",
+    "number_of_reuses", "base_quantity",
+}
+
 # Columns that older workbooks may still contain; ignored without error.
 # original_placed_on_market is derived (DE -> TRUE, others -> FALSE);
-# the fixed-false criteria are pinned regardless of what an old workbook says.
+# fixed criteria/values are pinned regardless of what an old workbook says.
 LEGACY_IGNORED_COLUMNS = {
     "MarketCountries": {"original_placed_on_market"},
     "BasicUDI": set(FIXED_FALSE_FIELDS),
+    "Devices": set(FIXED_DEVICE_FIELDS),
 }
 
 # Country whose market entry counts as the original placing on the EU market

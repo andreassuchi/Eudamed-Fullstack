@@ -43,9 +43,8 @@ def test_device_form_flow(client):
     r = client.post("/devices/new", data={
         "udi_di": "04099999000011", "issuing_entity_code": "GS1",
         "basic_udi_di": "B-WEB-0003", "reference_number": "R-1",
-        "device_status": "ON_THE_MARKET", "number_of_reuses": "0",
-        "base_quantity": "1",
-        "production_identifiers": ["BATCH_NUMBER"],
+        "device_status": "ON_THE_MARKET",
+        "production_identifiers": ["SERIALISATION_NUMBER"],
         "tn_language": ["EN"], "tn_text": ["WebDev"],
         "emdn_code": ["A010101"], "emdn_description": [""],
         "mc_country": ["DE"], "mc_start": [""], "mc_end": [""],

@@ -19,7 +19,7 @@ def test_generate_xml_structure(tmp_path, sample_workbook):
     udi = dev.find("device:MDRUDIDIData", NS)
     assert udi.findtext("udidi:identifier/commondi:DICode", namespaces=NS) == "04012345000012"
     assert udi.findtext("udidi:basicUDIIdentifier/commondi:DICode", namespaces=NS) == "B-GS1-XYZ-0001-AB"
-    assert udi.findtext("udidi:sterile", namespaces=NS) == "true"
+    assert udi.findtext("udidi:sterile", namespaces=NS) == "false"
     assert udi.findtext("udidi:MDNCodes", namespaces=NS) == "A0101"
     assert udi.findtext("udidi:tradeNames/lsn:name/lsn:textValue", namespaces=NS) == "AcmeFlow"
     assert udi.findtext("udidi:marketInfos/marketinfo:marketInfo/marketinfo:country", namespaces=NS) == "DE"

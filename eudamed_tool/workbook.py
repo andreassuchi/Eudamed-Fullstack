@@ -15,6 +15,13 @@ from .models import (
 
 BOOL_VALUES = ["TRUE", "FALSE"]
 
+# Offered selection for this portfolio (the XSD allows more; model stays permissive)
+ALLOWED_PRODUCTION_IDENTIFIERS = [
+    ProductionIdentifierType.SERIALISATION_NUMBER,
+    ProductionIdentifierType.MANUFACTURING_DATE,
+    ProductionIdentifierType.SOFTWARE_IDENTIFICATION,
+]
+
 # sheet name -> ordered list of (column header, required, allowed values or None)
 SHEETS = {
     # Fixed to FALSE and not workbook columns (see importer.py FIXED_FALSE_FIELDS):
@@ -30,20 +37,16 @@ SHEETS = {
         ("active", False, BOOL_VALUES),
         ("measuring_function", False, BOOL_VALUES),
     ],
+    # Fixed values, not workbook columns (see importer.py):
+    # sterile/sterilization/latex/reprocessed/single_use = FALSE,
+    # number_of_reuses = -1, base_quantity = 1
     "Devices": [
         ("udi_di", True, None),
         ("issuing_entity_code", True, [e.value for e in IssuingEntityCode]),
         ("basic_udi_di", True, None),
         ("reference_number", True, None),
         ("device_status", False, [e.value for e in DeviceStatus]),
-        ("sterile", False, BOOL_VALUES),
-        ("sterilization", False, BOOL_VALUES),
-        ("number_of_reuses", True, None),
-        ("base_quantity", True, None),
-        ("latex", False, BOOL_VALUES),
-        ("reprocessed", False, BOOL_VALUES),
         ("intended_purpose", False, None),
-        ("single_use", False, BOOL_VALUES),
         ("software_version", False, None),
         ("direct_marking_di", False, None),
     ],
@@ -60,7 +63,7 @@ SHEETS = {
     ],
     "ProductionIdentifiers": [
         ("udi_di", True, None),
-        ("identifier_type", True, [e.value for e in ProductionIdentifierType]),
+        ("identifier_type", True, [e.value for e in ALLOWED_PRODUCTION_IDENTIFIERS]),
     ],
     # original_placed_on_market is not a column: it is derived automatically
     # (TRUE for DE, FALSE for every other country) — see importer.py

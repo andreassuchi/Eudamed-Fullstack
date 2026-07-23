@@ -37,14 +37,6 @@
     </label>
   </div>
   <div class="grid">
-    <label>Number of reuses * <small>(-1 = n/a, 0 = single use)</small>
-      <input type="number" name="number_of_reuses" min="-1" required
-             value="{{ row.number_of_reuses if row else 0 }}">
-    </label>
-    <label>Base quantity *
-      <input type="number" name="base_quantity" min="1" required
-             value="{{ row.base_quantity if row else 1 }}">
-    </label>
     <label>Software version
       <input name="software_version" value="{{ row.software_version or '' if row else '' }}">
     </label>
@@ -52,16 +44,8 @@
       <input name="direct_marking_di" value="{{ row.direct_marking_di or '' if row else '' }}">
     </label>
   </div>
-  <fieldset>
-    <legend>Flags</legend>
-    <div class="grid">
-      {% for f, label in [("sterile", "Supplied sterile"), ("sterilization", "Sterilisation before use"),
-                          ("latex", "Contains latex"), ("reprocessed", "Reprocessed single-use"),
-                          ("single_use", "Single use")] %}
-      <label><input type="checkbox" name="{{ f }}" {% if row and row[f] %}checked{% endif %}> {{ label }}</label>
-      {% endfor %}
-    </div>
-  </fieldset>
+  <small>Fixed for this portfolio: sterile, sterilisation before use, latex, reprocessed
+    and single use are "no"; number of reuses is n/a (-1); base quantity is 1.</small>
   <label>Intended purpose
     <textarea name="intended_purpose" rows="2">{{ row.intended_purpose or '' if row else '' }}</textarea>
   </label>

@@ -11,7 +11,8 @@ def test_import_ok(sample_workbook):
     assert len(reg.devices) == 1
     d = reg.devices[0]
     assert d.issuing_entity_code is IssuingEntityCode.GS1
-    assert d.sterile is True
+    # fixed portfolio values
+    assert d.sterile is False and d.number_of_reuses == -1 and d.base_quantity == 1
     assert d.trade_names[0].trade_name == "AcmeFlow"
     assert d.market_countries[0].country_code == "DE"
 

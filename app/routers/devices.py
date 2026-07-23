@@ -91,20 +91,15 @@ async def _model_from_form(request: Request) -> Device:
         for c, start, end in zip(getlist("mc_country"), getlist("mc_start"), getlist("mc_end"))
         if c.strip()
     ]
+    # sterile/sterilization/latex/reprocessed/single_use, number_of_reuses (-1)
+    # and base_quantity (1) are fixed portfolio values -> model defaults apply.
     return Device(
         udi_di=form_str(form, "udi_di"),
         issuing_entity_code=form_str(form, "issuing_entity_code"),
         basic_udi_di=form_str(form, "basic_udi_di"),
         reference_number=form_str(form, "reference_number"),
         device_status=form_str(form, "device_status", "ON_THE_MARKET"),
-        sterile=form_bool(form, "sterile"),
-        sterilization=form_bool(form, "sterilization"),
-        number_of_reuses=int(form_str(form, "number_of_reuses", "0")),
-        base_quantity=int(form_str(form, "base_quantity", "1")),
-        latex=form_bool(form, "latex"),
-        reprocessed=form_bool(form, "reprocessed"),
         intended_purpose=form_opt(form, "intended_purpose"),
-        single_use=form_bool(form, "single_use") if form.get("single_use") else None,
         software_version=form_opt(form, "software_version"),
         direct_marking_di=form_opt(form, "direct_marking_di"),
         trade_names=trade_names,

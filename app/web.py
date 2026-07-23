@@ -11,9 +11,9 @@ from eudamed_tool.models import (
     DeviceStatus,
     DeviceType,
     IssuingEntityCode,
-    ProductionIdentifierType,
     RiskClass,
 )
+from eudamed_tool.workbook import ALLOWED_PRODUCTION_IDENTIFIERS
 
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 
@@ -23,7 +23,7 @@ templates.env.globals.update(
     risk_classes=[e.value for e in RiskClass],
     device_types=[e.value for e in DeviceType],
     device_statuses=[e.value for e in DeviceStatus],
-    pi_types=[e.value for e in ProductionIdentifierType],
+    pi_types=[e.value for e in ALLOWED_PRODUCTION_IDENTIFIERS],
     languages=sorted(LANGUAGE_CODES),
     market_countries=sorted(EU_MARKET_COUNTRIES),
 )

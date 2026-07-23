@@ -27,10 +27,9 @@ def _demo_basic(**over) -> BasicUDI:
 def _demo_device(**over) -> Device:
     data = dict(udi_di="04012345000012", issuing_entity_code="GS1",
                 basic_udi_di="B-TEST-0001", reference_number="REF-1",
-                number_of_reuses=0, base_quantity=1,
                 trade_names=[TradeName(language_code="EN", trade_name="TestDev")],
                 emdn_codes=[EMDNCode(emdn_code="A010101")],
-                production_identifiers=["BATCH_NUMBER"],
+                production_identifiers=["SERIALISATION_NUMBER"],
                 market_countries=[MarketCountry(country_code="DE")])
     data.update(over)
     return Device(**data)
