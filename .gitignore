@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generated run output
+output/
+
+# Portable distribution archive (built artifact)
+EUDAMED-Upload-portable.zip
+
+# Personal working data (keep out of the repo)
+templates/eudamed_data_test_iba.xlsx
+templates/test.xlsx
+
+# Editor/OS
+.vscode/
+Thumbs.db
+~$*.xlsx
