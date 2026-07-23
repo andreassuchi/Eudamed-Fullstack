@@ -99,7 +99,7 @@ def upgrade() -> None:
     sa.Column('xml_path', sa.String(length=500), nullable=True),
     sa.Column('xml_sha256', sa.String(length=64), nullable=True),
     sa.Column('xsd_status', sa.String(length=10), nullable=True),
-    sa.Column('xsd_errors', sa.JSON().with_variant(postgresql.JSONB(astext_type=Text()), 'postgresql'), nullable=True),
+    sa.Column('xsd_errors', sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), 'postgresql'), nullable=True),
     sa.Column('app_version', sa.String(length=20), nullable=False),
     sa.ForeignKeyConstraint(['validation_run_id'], ['validation_run.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
