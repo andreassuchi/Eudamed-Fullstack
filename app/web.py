@@ -15,7 +15,10 @@ from eudamed_tool.models import (
 )
 from eudamed_tool.workbook import ALLOWED_PRODUCTION_IDENTIFIERS
 
+from app import __version__
+
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
+templates.env.globals["app_version"] = __version__
 
 # enum choices for form dropdowns (same vocabularies as the Excel template)
 templates.env.globals.update(

@@ -1,8 +1,8 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Basic UDI-DIs{% endblock %}
 {% block content %}
 <h2>Basic UDI-DIs</h2>
-{% for e in errors or [] %}<article style="border-color:#d32f2f"><small>{{ e }}</small></article>{% endfor %}
+{% for e in errors or [] %}<article class="alert-error"><small>{{ e }}</small></article>{% endfor %}
 <p><a role="button" href="/basic-udis/new">+ New Basic UDI-DI</a></p>
 <table>
   <thead><tr><th>Basic UDI-DI</th><th>Model name</th><th>Risk class</th><th>Type</th><th>Devices</th><th></th></tr></thead>

@@ -3,32 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}EUDAMED{% endblock %} — EUDAMED Fullstack</title>
-  <link rel="stylesheet" href="/static/pico.min.css">
+  <title>{% block title %}EUDAMED{% endblock %} — AS-Consult</title>
+  <link rel="stylesheet" href="/static/style.css">
   <script src="/static/htmx.min.js" defer></script>
-  <style>
-    .severity-ERROR { color: #d32f2f; font-weight: 600; }
-    .severity-WARNING { color: #ed6c02; font-weight: 600; }
-    .status-READY_FOR_UPLOAD { color: #2e7d32; font-weight: 600; }
-    .status-VALIDATION_FAILED, .status-XSD_VALIDATION_FAILED { color: #d32f2f; font-weight: 600; }
-    table { font-size: 0.9rem; }
-    .child-table input, .child-table select { margin-bottom: 0; }
-    nav strong { margin-right: 1rem; }
-  </style>
 </head>
 <body>
-<main class="container">
-  <nav>
-    <ul>
-      <li><strong>EUDAMED</strong></li>
-      <li><a href="/">Dashboard</a></li>
-      <li><a href="/basic-udis">Basic UDI-DIs</a></li>
-      <li><a href="/devices">Devices</a></li>
-      <li><a href="/import">Import</a></li>
-      <li><a href="/generation">Validate &amp; Generate</a></li>
-    </ul>
+<header class="topbar">
+  <a class="brand" href="/">AS-Consult <small>EUDAMED Registration</small></a>
+  <nav class="topbar-links">
+    <a href="/" class="{{ 'active' if request.url.path == '/' else '' }}">Dashboard</a>
+    <a href="/basic-udis" class="{{ 'active' if request.url.path.startswith('/basic-udis') else '' }}">Basic UDI-DIs</a>
+    <a href="/devices" class="{{ 'active' if request.url.path.startswith('/devices') else '' }}">Devices</a>
+    <a href="/import" class="{{ 'active' if request.url.path.startswith('/import') else '' }}">Import</a>
+    <a href="/generation" class="{{ 'active' if request.url.path.startswith('/generation') else '' }}">Validate &amp; Generate</a>
   </nav>
-  {% block content %}{% endblock %}
+</header>
+<main class="page-main">
+  <div class="page-frame">
+    <div class="page-panel">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
 </main>
+<footer class="app-footer">EUDAMED Fullstack {{ app_version }} · DTX schema 3.0.30</footer>
 </body>
 </html>
