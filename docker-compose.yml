@@ -24,6 +24,7 @@ services:
       EUDAMED_OUTPUT_DIR: /srv/eudamed/output
     volumes:
       - ./output:/srv/eudamed/output
+      - ./backups:/srv/eudamed/backups
     ports:
       - "8090:8000"  # host 8090: 8080 is taken by EDB Postgres
     depends_on:

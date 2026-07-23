@@ -41,6 +41,10 @@ uvicorn app.main:app --reload --port 8090
   identifiers, market countries) managed inline via HTMX
 - **Excel import** — upload the master-data workbook → preview
   (issues or create/update summary) → one-transaction commit
+- **Backups** — automatic pg_dump every 24 h (checked hourly, configurable via
+  `EUDAMED_BACKUP_INTERVAL_HOURS`, 0 disables) plus manual trigger and download
+  in the UI; dumps land in `backups/` on the host, the 30 most recent are kept
+  (`EUDAMED_BACKUP_KEEP`); restore with `pg_restore --clean -d eudamed <file>`
 - **Validate & Generate** — runs rule engine VAL-001…VAL-012, persists findings;
   XML generation is refused on blocking errors (BR-009), output is validated
   against the official XSD package, and every job is logged with SHA-256 hashes

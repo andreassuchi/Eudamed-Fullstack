@@ -15,5 +15,11 @@ class Settings(BaseSettings):
     output_dir: Path = REPO_ROOT / "output"
     xsd_dir: Path = REPO_ROOT / "xsd"
 
+    # database backups
+    backup_dir: Path = REPO_ROOT / "backups"
+    backup_interval_hours: float = 24.0  # 0 disables the scheduler
+    backup_keep: int = 30  # retained dump files (oldest deleted first)
+    pg_dump_path: str = "pg_dump"
+
 
 settings = Settings()

@@ -6,6 +6,9 @@ __pycache__/
 # Generated run output
 output/
 
+# Database dumps
+backups/
+
 # Portable distribution archive (built artifact)
 EUDAMED-Upload-portable.zip
 
