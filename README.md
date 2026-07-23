@@ -19,16 +19,18 @@ Browser (Jinja2 + HTMX)
 docker compose up --build
 ```
 
-Then open <http://localhost:8080>. The app container migrates the database
+Then open <http://localhost:8090>. The app container migrates the database
 automatically on startup. Generated XML lands in `./output/` on the host.
-(To change the port, edit the `8080:8000` mapping in `docker-compose.yml`.)
+(Ports: app on host 8090, containerised PostgreSQL on host 5433 — chosen to
+avoid the local EDB Postgres on 8080/5432; edit the mappings in
+`docker-compose.yml` to change.)
 
 Local development without Docker (needs a running PostgreSQL, see `.env.example`):
 
 ```text
 pip install -r requirements.txt
 alembic upgrade head
-uvicorn app.main:app --reload --port 8080
+uvicorn app.main:app --reload --port 8090
 ```
 
 ## Features
