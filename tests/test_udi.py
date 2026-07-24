@@ -55,6 +55,22 @@ def test_hibcc_check_char_standard_vector():
     assert not udi.is_valid_hibcc("A123BJC5D6E71J")  # the old (wrong) value
 
 
+def test_hibcc_basic_udi_di_mod1021_vector():
+    # HIBCC Basic UDI-DI uses MOD 1021,32 (like the GMN), NOT mod-43.
+    # Official example: "++A999MODELIDENTIFIER11" -> 774 -> "S8".
+    assert udi.hibcc_basic_check_pair("++A999MODELIDENTIFIER11") == "S8"
+    assert udi.hibcc_basic_check_pair("A999MODELIDENTIFIER11") == "S8"  # ++ implied
+    assert udi.complete_hibcc_basic("A999MODELIDENTIFIER11") == "++A999MODELIDENTIFIER11S8"
+    assert udi.is_valid_hibcc_basic("++A999MODELIDENTIFIER11S8")
+
+
+def test_hibcc_basic_vs_udi_di_use_different_schemes():
+    basic = udi.validate_di("++A999MODELIDENTIFIER11S8", "HIBCC", is_basic=True)
+    device = udi.validate_di("+A123BJC5D6E71G", "HIBCC", is_basic=False)
+    assert basic.scheme == "HIBC-BASIC" and basic.valid is True
+    assert device.scheme == "HIBC" and device.valid is True
+
+
 # --- dispatch ---------------------------------------------------------------
 
 def test_validate_di_gs1_device_gtin():
