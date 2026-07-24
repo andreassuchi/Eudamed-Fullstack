@@ -200,7 +200,7 @@
 			<xs:element name="payload" type="m:CoreEntityPayloadType" minOccurs="1" maxOccurs="1"/>
 			<xs:element name="sender" type="m:EndpointType" minOccurs="1" maxOccurs="1"/>
 		</xs:sequence>
-		<xs:attribute name="version" use="required" fixed="3.0.30" type="xs:string">
+		<xs:attribute name="version" use="required" fixed="3.0.32" type="xs:string">
 			<xs:annotation>
 				<xs:documentation>Version of the XSD model schema against the current entities are validated.</xs:documentation>
 			</xs:annotation>

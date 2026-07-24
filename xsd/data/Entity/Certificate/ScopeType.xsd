@@ -965,6 +965,13 @@
             <xs:element name="instructionsForUse" type="crtfscp:InstructionForUseType" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
+    <xs:complexType name="PostMechanismForScrutinyMDRType">
+        <xs:sequence>
+            <xs:element name="NOCECP" type="crtfcecp:NOCECPType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="CECP" type="crtfcecp:PostCECPType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="instructionsForUse" type="crtfscp:InstructionForUseType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
     <xs:complexType name="MechanismForScrutinyIVDRType">
         <xs:sequence>
             <xs:element name="SOFollowed" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
@@ -976,8 +983,8 @@
             <xs:element name="laboratoryTest" type="doct:DocumentType" minOccurs="0" maxOccurs="1"/>
             <xs:element name="expertPanelViews" type="doct:DocumentType" minOccurs="0" maxOccurs="1"/>
             <xs:element name="PEAssessmentReport" type="doct:DocumentType" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="instructionsForUse" type="crtfscp:InstructionForUseType" minOccurs="1" maxOccurs="unbounded"/>
-            <xs:element name="mosOutsideEudamed" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="instructionsForUse" type="crtfscp:InstructionForUseType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="mosOutsideEudamed" type="xs:boolean" minOccurs="1" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
     <xs:simpleType name="DeviceHorizontalCodes">

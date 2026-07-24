@@ -10,6 +10,8 @@
 		   xmlns:actor="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Actor/v1"
 		   xmlns:doct="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Common/Document/v1"
 		   xmlns:crtfscp="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Certificate/Scope/v1"
+		   xmlns:commondi="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Device/CommonDevice/v1"
+		   xmlns:riskclass="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Common/RiskClass/v1"
 		   elementFormDefault="qualified">
 
 	<xs:import namespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Certificate/v1" schemaLocation="CertificateType.xsd"/>
@@ -21,6 +23,8 @@
 	<xs:import namespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Actor/v1" schemaLocation="../Actor.xsd"/>
 	<xs:import namespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Certificate/Scope/v1" schemaLocation="ScopeType.xsd"/>
 	<xs:import namespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Certificate/ApplicationCertificate/v1" schemaLocation="ApplicationCertificateType.xsd"/>
+	<xs:import namespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Device/CommonDevice/v1" schemaLocation="../Device/CommonDeviceType.xsd"/>
+	<xs:import namespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Common/RiskClass/v1" schemaLocation="../Common/RiskClassEnum.xsd"/>
 
 	<xs:complexType name="RefusedCommentsType">
 		<xs:sequence>
@@ -42,6 +46,30 @@
 		</xs:sequence>
 	</xs:complexType>
 
+	<xs:complexType name="RefusedProductProcedureScopeType">
+		<xs:sequence>
+			<xs:element name="riskClass" type="riskclass:RiskClassEnum" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="DICode" type="commondi:DIIdentifierType" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="horizontalDeviceTypeCodes" type="crtfscp:DeviceHorizontalCodes" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="intendedPurposes" type="crtfscp:IntendedPurposesType" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="productDeviceTypeCode" type="crtfscp:DeviceCodesEnum" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="model" type="commonbasic:stringXSType" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="reference" type="xs:string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="name" type="commonbasic:stringSType" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="basicUdiKnown" type="xs:boolean" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="implantable" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="isRegisteredInUDIModule" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="wasCECPfollowed" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="mosOutsideEudamed" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="RefusedProductProcedureScopesType">
+		<xs:sequence>
+			<xs:element name="scope" type="refcrtf:RefusedProductProcedureScopeType" minOccurs="1" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
 
 	<xs:complexType name="RefusedProductProcedureType">
 		<xs:sequence>
@@ -50,7 +78,7 @@
 			<xs:element name="NBActorCode" type="commonbasic:stringNBActorCodeType"/>
 			<xs:element name="ARActorCodes" type="actor:ActorCodesType" minOccurs="0"/>
 			<xs:element name="documents" type="doct:DocumentsType"/>
-			<xs:element name="scopes" type="crtfscp:ProductProcedureScopesType"/>
+			<xs:element name="scopes" type="refcrtf:RefusedProductProcedureScopesType"/>
 		</xs:sequence>
 	</xs:complexType>
 

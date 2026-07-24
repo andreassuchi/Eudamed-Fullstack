@@ -1,3 +1,7 @@
+# Playground stack (DTX 3.0.32 branch) — runs alongside production.
+# Distinct project name keeps containers and the pgdata volume separate.
+name: eudamed-playground
+
 services:
   db:
     image: postgres:16
@@ -8,7 +12,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5433:5432"  # host 5433: local EDB Postgres already owns 5432
+      - "5434:5432"  # playground db (production uses 5433; 5432 is local EDB)
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U eudamed"]
       interval: 5s
@@ -27,7 +31,7 @@ services:
       - ./output:/srv/eudamed/output
       - ./backups:/srv/eudamed/backups
     ports:
-      - "8090:8000"  # host 8090: 8080 is taken by EDB Postgres
+      - "8091:8000"  # playground app (production uses 8090)
     depends_on:
       db:
         condition: service_healthy

@@ -31,9 +31,9 @@
 							<xs:documentation>#FLD-ACT-001# - Description: Actor Identifier (of SRN pattern type for Economic Operators and Sponsors)</xs:documentation>
 						</xs:annotation>
 					</xs:element>
-					<xs:element name="statusFromDate " type="xs:date" minOccurs="0" maxOccurs="1">
+					<xs:element name="statusFromDate" type="xs:date" minOccurs="0" maxOccurs="1">
 						<xs:annotation>
-							<xs:documentation>#FLD-ACT-002# - Activity Cease Date. The date when an actor has been desactivated</xs:documentation>
+							<xs:documentation>#FLD-ACT-002# - Activity Cease Date. The date when an actor has been deactivated</xs:documentation>
 						</xs:annotation>
 					</xs:element>
 					<xs:element name="statusChangeReason" type="xs:string" minOccurs="0" maxOccurs="1">
@@ -223,6 +223,13 @@
 					<xs:documentation>Description: Actor Identifier (of SRN pattern type)</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="PostCertificateActorBaseType">
+		<xs:sequence>
+			<xs:element name="actorCode" type="commonbasic:stringSRNType" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="version" type="xs:string" minOccurs="0" maxOccurs="1"/>
 		</xs:sequence>
 	</xs:complexType>
 

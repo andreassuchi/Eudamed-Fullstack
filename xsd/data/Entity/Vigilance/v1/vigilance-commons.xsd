@@ -599,7 +599,7 @@
 							<xs:complexType>
 								<xs:sequence>
 									<xs:element name="distributionCountry" type="ENUM_COUNTRIES_MDR_LIST" maxOccurs="unbounded"/>
-									<xs:element name="otherCountries" type="ENUM_NON_EU_COUNTRIES_ORDINAL" minOccurs="0" maxOccurs="unbounded">
+									<xs:element name="otherCountries" type="ENUM_NON_EEA_COUNTRIES_EXPANDED_ORDINAL" minOccurs="0" maxOccurs="unbounded">
 										<xs:annotation>
 											<xs:documentation>BR-EUD-007</xs:documentation>
 										</xs:annotation>
@@ -2204,7 +2204,7 @@
 		<xs:complexContent>
 			<xs:extension base="vigbase:DossierFieldsType">
 				<xs:sequence>
-					<xs:element name="ca_srn" type="xs:string" minOccurs="0"/>
+					<xs:element name="cca_srn" type="xs:string" minOccurs="0"/>
 					<xs:element name="countries" type="xs:string" minOccurs="0"/>
 					<xs:element name="mf_srn" type="xs:string" minOccurs="0"/>
 					<xs:element name="mfr" type="xs:string" minOccurs="0"/>

@@ -12,8 +12,10 @@
            xmlns:sscp="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/SSCP/v1"
            xmlns:actor="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Actor/v1"
            xmlns:crtfscp="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Certificate/Scope/v1"
+           xmlns:doct="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Common/Document/v1"
            elementFormDefault="qualified">
 
+    <xs:import namespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Common/Document/v1" schemaLocation="../Common/DocumentType.xsd"/>
     <xs:import namespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Certificate/v1" schemaLocation="CertificateType.xsd"/>
     <xs:import namespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Certificate/IssuedCertificate/v1" schemaLocation="IssuedCertificateType.xsd"/>
     <xs:import namespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/CommonBasic/v1" schemaLocation="../Common/CommonBasicType.xsd"/>
@@ -34,8 +36,13 @@
                     <xs:element name="identifier" type="postcertificate:PostCertificateIdentifierType" minOccurs="1" maxOccurs="1"/>
                     <xs:choice minOccurs="1" maxOccurs="1">
                         <xs:element name="productProcedure" type="postcertificate:PostCertificateProductProcedureType" minOccurs="1" maxOccurs="1"/>
+                        <xs:element name="qualityProcedure" type="postcertificate:PostCertificateQualityProcedureType" minOccurs="1" maxOccurs="1"/>
                     </xs:choice>
                     <xs:element name="precedingCertificates" type="postcertificate:PostPrecedingCertificateIdentifiersType" minOccurs="0" maxOccurs="1"/>
+                    <xs:choice minOccurs="0" maxOccurs="1">
+                        <xs:element name="mechanismForScrutinyIVDR" type="crtfscp:MechanismForScrutinyIVDRType" minOccurs="1" maxOccurs="1"/>
+                        <xs:element name="mechanismForScrutinyMDR" type="crtfscp:PostMechanismForScrutinyMDRType" minOccurs="1" maxOccurs="1"/>
+                    </xs:choice>
                     <xs:element name="status" type="postcertificate:PostCertificateStatusType" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="conditions" type="postcertificate:PostCertificateConditionsType" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="acceptedDisclaimer" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
@@ -151,6 +158,36 @@
                     <xs:element name="MFActor" type="actor:BaseActorType" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="ARActors" type="actor:ActorCodesType" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="scopes" type="crtfscp:ProductProcedureScopesType" minOccurs="1" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="PostCertificateQualityProcedureSpecialDeviceType">
+        <xs:sequence>
+            <xs:element name="deviceManufTissueAnimal" type="xs:boolean" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="deviceManufTissueHuman" type="xs:boolean" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="deviceInSterileCondition" type="xs:boolean" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="deviceInVitro" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="deviceWithoutMedPurpose" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="PostCertificateQualityProcedureDocumentsType">
+        <xs:sequence>
+            <xs:element name="document" type="doct:DocumentType" minOccurs="1" maxOccurs="100"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="PostCertificateQualityProcedureType">
+        <xs:complexContent>
+            <xs:extension base="e:Entity">
+                <xs:sequence>
+                    <xs:element name="applicableRegulation" type="crtf:QualityRegulationEnum" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="SPPScope" type="crtf:SPPEnum" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="MFActor" type="actor:PostCertificateActorBaseType" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="ARActors" type="actor:PostCertificateActorBaseType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="PRActor" type="actor:PostCertificateActorBaseType" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="scopes" type="crtfscp:QualityProcedureScopesType" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="specialDevice" type="postcertificate:PostCertificateQualityProcedureSpecialDeviceType" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="documents" type="postcertificate:PostCertificateQualityProcedureDocumentsType" minOccurs="1" maxOccurs="1"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>

@@ -64,13 +64,7 @@
 					</xs:element>
 					<xs:element name="documents" type="sscp:SSCPDocumentsType" minOccurs="1" maxOccurs="1"/>
 					<xs:element name="SSCPRevisionNumber" type="commonbasic:stringSType" minOccurs="1" maxOccurs="1"/>
-					<xs:element name="validated" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
-					<xs:element name="sscpUpload" type="sscp:SSCPUploadEnum" minOccurs="1" maxOccurs="1"/>
-					<xs:element name="certificateID" type="commonbasic:stringXSType" minOccurs="0" maxOccurs="unbounded">
-						<xs:annotation>
-							<xs:documentation>Field indicates a specific version of the certificate to which the Basic UDI-DI from this SS(C)P entity is linked to.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
+					<xs:element name="status" type="sscp:SSCPStatusEnum" minOccurs="1" maxOccurs="1"/>
 					<xs:element name="MFActorCode" type="commonbasic:stringSRNType" minOccurs="0" maxOccurs="1">
 						<xs:annotation>
 							<xs:documentation>Field indicates the Single Registration Number of the Manufacturer.</xs:documentation>
@@ -90,23 +84,28 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
-	<xs:simpleType name="SSCPUploadEnum">
+	<xs:simpleType name="SSCPStatusEnum">
 		<xs:restriction base="xs:string">
-			<xs:enumeration value="SSCPUpload_Cert">
+			<xs:enumeration value="VALIDATED">
 				<xs:annotation>
-					<xs:documentation>Certificate registration</xs:documentation>
+					<xs:documentation>Validated</xs:documentation>
 				</xs:annotation>
 			</xs:enumeration>
-			<xs:enumeration value="SSCPUpload_Mgmt">
+			<xs:enumeration value="PARTIALLY_VALIDATED">
 				<xs:annotation>
-					<xs:documentation>SS(C)P Management</xs:documentation>
+					<xs:documentation>Partially validated</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="NOT_VALIDATED">
+				<xs:annotation>
+					<xs:documentation>Not validated</xs:documentation>
 				</xs:annotation>
 			</xs:enumeration>
 		</xs:restriction>
 	</xs:simpleType>
 	<xs:complexType name="LinkedCertificateType">
 		<xs:sequence>
-			<xs:element name="certificateIdentitfier" type="crtfissued:CertificateIdentifierType" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="certificateIdentifier" type="crtfissued:CertificateIdentifierType" minOccurs="0" maxOccurs="1"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="BasicUdiWithLinkedCertificateType">

@@ -145,7 +145,7 @@
                                                         <xs:element name="fscaQAInternalTestingsSection" minOccurs="0">
                                                             <xs:complexType>
                                                                 <xs:sequence>
-                                                                    <xs:element name="fscaDecisionQATestingApplicable" type="xs:boolean" minOccurs="0"/>
+                                                                    <xs:element name="fscaDecisionQATestingApplicable" type="xs:boolean"/>
                                                                     <xs:element name="fscaQAReferenceID" type="vigbase:stringOrdinal" minOccurs="0" maxOccurs="unbounded"/>
                                                                 </xs:sequence>
                                                             </xs:complexType>
@@ -160,7 +160,7 @@
                                                         <xs:element name="fscaTrendReferenceSection" minOccurs="0">
                                                             <xs:complexType>
                                                                 <xs:sequence>
-                                                                    <xs:element name="fscaDecisionTrendApplicable" type="xs:boolean" minOccurs="0"/>
+                                                                    <xs:element name="fscaDecisionTrendApplicable" type="xs:boolean"/>
                                                                     <xs:element name="fscaTrendIReferenceID" type="vigbase:stringOrdinal" minOccurs="0" maxOccurs="unbounded"/>
                                                                 </xs:sequence>
                                                             </xs:complexType>
@@ -175,7 +175,7 @@
                                                         <xs:element name="fscaDecisionPsurSection" minOccurs="0">
                                                             <xs:complexType>
                                                                 <xs:sequence>
-                                                                    <xs:element name="fscaDecisionPsurApplicable" type="xs:boolean" minOccurs="0"/>
+                                                                    <xs:element name="fscaDecisionPsurApplicable" type="xs:boolean"/>
                                                                     <xs:element name="fscapsurID" type="vigbase:stringOrdinal" minOccurs="0" maxOccurs="unbounded"/>
                                                                 </xs:sequence>
                                                             </xs:complexType>
@@ -1486,6 +1486,16 @@
                                             <xs:element name="adminInfoSection" minOccurs="0">
                                                 <xs:complexType>
                                                     <xs:sequence>
+                                                        <xs:element name="versionStatus" type="xs:string" minOccurs="0">
+                                                            <xs:annotation>
+                                                                <xs:documentation>* Output only field *</xs:documentation>
+                                                            </xs:annotation>
+                                                        </xs:element>
+                                                        <xs:element name="dossierStatus" type="xs:string" minOccurs="0">
+                                                            <xs:annotation>
+                                                                <xs:documentation>* Output only field *</xs:documentation>
+                                                            </xs:annotation>
+                                                        </xs:element>
                                                         <xs:element name="competentAuthorityCountry" type="ENUM_COUNTRIES_MDR_LIST">
                                                             <xs:annotation>
                                                                 <xs:documentation>BR-VGL-PSR-005.03, BR-VGL-PSR-005.31, BR-VGL-PSR-005.47</xs:documentation>

@@ -3,6 +3,7 @@
 <xs:schema targetNamespace="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Certificate/Cecp/v1"
            xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns:crtfcecp="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Certificate/Cecp/v1"
+           xmlns:crtfscp="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Certificate/Scope/v1"
            xmlns:dt="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Common/Decision/v1"
            xmlns:doct="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Common/Document/v1"
            xmlns:links="https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Links/v1"
@@ -194,12 +195,20 @@
             <xs:element name="acceptedDisclaimer" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
+    <xs:complexType name="PostCECPType">
+        <xs:sequence>
+            <xs:element name="reference" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="SODocument" type="doct:DocumentType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="SOFollowed" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="justificationNotFollowingSO" type="doct:DocumentType" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
     <xs:complexType name="NOCECPType">
         <xs:sequence>
             <xs:element name="basicUDI" type="commondi:DIIdentifierType" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wasCECPfollowed" type="xs:boolean" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="soProvided" type="xs:boolean" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="mosOutsideEudamed" type="xs:boolean" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="soProvided" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="mosOutsideEudamed" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="scientificOpinion" type="crtfcecp:CECPScientificOpinionType" minOccurs="0" maxOccurs="1"/>
             <xs:element name="SOFollowed" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="SODocument" type="doct:DocumentType" minOccurs="0" maxOccurs="1"/>
