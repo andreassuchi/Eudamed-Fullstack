@@ -321,6 +321,10 @@ code {
 .err-num { color: var(--stamp); }
 .muted-num { color: var(--ink-soft); }
 
+.udi-check { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.3rem; }
+.udi-check button { padding: 0.15rem 0.55rem; font-size: 0.78rem; }
+.udi-check .muted { color: var(--ink-soft); }
+
 /* --- dark mode ----------------------------------------------------------- */
 @media (prefers-color-scheme: dark) {
   :root {

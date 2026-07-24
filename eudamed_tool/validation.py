@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from typing import Callable, List, Optional
 
 from .models import Device, Registration
+from .udi import validate_di
 
 
 class Severity(str, enum.Enum):
@@ -157,6 +158,34 @@ def _build_rules() -> List[Rule]:
         return findings
     add("VAL-012", "Market date order", "market_country.withdrawal_date", val_012,
         "Correct the market dates.")
+
+    # VAL-013: UDI-DI check digit (GS1 GTIN / HIBCC), warning
+    def val_013(reg: Registration, rule: Rule):
+        findings = []
+        for d in reg.devices:
+            r = validate_di(d.udi_di, d.issuing_entity_code.value, is_basic=False)
+            if r.supported and r.valid is False:
+                findings.append(Finding(rule.code, rule.severity, f"device:{d.udi_di}",
+                                        rule.field_path, r.message,
+                                        f"Use {r.corrected}" if r.corrected else rule.recommended_correction))
+        return findings
+    add("VAL-013", "UDI-DI check digit", "device.udi_di", val_013,
+        "Verify the UDI-DI check digit with your issuing entity.",
+        severity=Severity.WARNING)
+
+    # VAL-014: Basic UDI-DI check digit (GS1 GMN / HIBCC), warning
+    def val_014(reg: Registration, rule: Rule):
+        findings = []
+        for b in reg.basic_udis:
+            r = validate_di(b.basic_udi_di, b.issuing_entity_code.value, is_basic=True)
+            if r.supported and r.valid is False:
+                findings.append(Finding(rule.code, rule.severity, f"basic_udi:{b.basic_udi_di}",
+                                        rule.field_path, r.message,
+                                        f"Use {r.corrected}" if r.corrected else rule.recommended_correction))
+        return findings
+    add("VAL-014", "Basic UDI-DI check digit", "basic_udi_di", val_014,
+        "Verify the Basic UDI-DI (GMN) check character pair with your issuing entity.",
+        severity=Severity.WARNING)
 
     return rules
 
