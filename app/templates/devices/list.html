@@ -15,7 +15,7 @@
 </div>
 <table>
   <thead><tr><th>UDI-DI</th><th>Reference</th><th>Basic UDI-DI</th><th>Status</th>
-    <th>EMDN</th><th>Markets</th><th></th></tr></thead>
+    <th>EMDN</th><th>Markets</th><th>Upload</th><th></th></tr></thead>
   <tbody>
   {% for r in rows %}
     <tr>
@@ -25,6 +25,7 @@
       <td>{{ r.device_status.value }}</td>
       <td>{{ r.emdn_codes | map(attribute="emdn_code") | join(", ") }}</td>
       <td>{{ r.market_countries | map(attribute="country_code") | join(", ") }}</td>
+      <td>{% with status=statuses[r.id] %}{% include "registration/_badge.html" %}{% endwith %}</td>
       <td>
         <form method="post" action="/devices/{{ r.id }}/delete" style="display:inline"
               onsubmit="return confirm('Delete {{ r.udi_di }}?')">
@@ -33,7 +34,7 @@
       </td>
     </tr>
   {% else %}
-    <tr><td colspan="7">No devices yet — create one or use the Excel import.</td></tr>
+    <tr><td colspan="8">No devices yet — create one or use the Excel import.</td></tr>
   {% endfor %}
   </tbody>
 </table>

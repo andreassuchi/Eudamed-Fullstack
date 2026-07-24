@@ -1,0 +1,38 @@
+<div class="grid">
+  <article><h4>{{ counts.IN_SYNC }}</h4>Registered &amp; in sync</article>
+  <article><h4 class="warn-num">{{ counts.MODIFIED }}</h4>Modified since upload</article>
+  <article><h4 class="err-num">{{ counts.ERROR }}</h4>Upload errors</article>
+  <article><h4 class="muted-num">{{ counts.NOT_UPLOADED }}</h4>Not uploaded</article>
+</div>
+
+<h4>Basic UDI-DIs</h4>
+<table>
+  <thead><tr><th>Basic UDI-DI</th><th>Model name</th><th>Status</th><th>Uploaded</th></tr></thead>
+  <tbody>
+  {% for b, status in basics %}
+    <tr>
+      <td><a href="/basic-udis/{{ b.id }}">{{ b.basic_udi_di }}</a></td>
+      <td>{{ b.model_name }}</td>
+      <td>{% with status=status %}{% include "registration/_badge.html" %}{% endwith %}</td>
+      <td><small>{{ b.uploaded_at.strftime("%Y-%m-%d %H:%M") if b.uploaded_at else "—" }}
+        {%- if b.upload_message %}<br>{{ b.upload_message }}{% endif %}</small></td>
+    </tr>
+  {% else %}<tr><td colspan="4">No Basic UDI-DIs.</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+<h4>Devices</h4>
+<table>
+  <thead><tr><th>UDI-DI</th><th>Reference</th><th>Status</th><th>Uploaded</th></tr></thead>
+  <tbody>
+  {% for d, status in devices %}
+    <tr>
+      <td><a href="/devices/{{ d.id }}">{{ d.udi_di }}</a></td>
+      <td>{{ d.reference_number }}</td>
+      <td>{% with status=status %}{% include "registration/_badge.html" %}{% endwith %}</td>
+      <td><small>{{ d.uploaded_at.strftime("%Y-%m-%d %H:%M") if d.uploaded_at else "—" }}
+        {%- if d.upload_message %}<br>{{ d.upload_message }}{% endif %}</small></td>
+    </tr>
+  {% else %}<tr><td colspan="4">No devices.</td></tr>{% endfor %}
+  </tbody>
+</table>

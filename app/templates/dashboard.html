@@ -28,6 +28,14 @@
   </article>
 </div>
 
+<h4>EUDAMED registration <small>(<a href="/registration">upload response</a>)</small></h4>
+<div class="grid">
+  <article><h4>{{ reg_counts.IN_SYNC }}</h4>Registered &amp; in sync</article>
+  <article><h4 class="warn-num">{{ reg_counts.MODIFIED }}</h4>Modified since upload</article>
+  <article><h4 class="err-num">{{ reg_counts.ERROR }}</h4>Upload errors</article>
+  <article><h4 class="muted-num">{{ reg_counts.NOT_UPLOADED }}</h4>Not uploaded</article>
+</div>
+
 <h4>Recent generation jobs</h4>
 {% if jobs %}
 <table>

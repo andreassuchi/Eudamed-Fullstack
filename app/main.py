@@ -52,9 +52,11 @@ def health() -> dict:
 
 def register_routers() -> None:
     """Import and mount routers (kept separate so tests can import app early)."""
-    from app.routers import backups, basic_udis, devices, generation, home, imports  # noqa: PLC0415
+    from app.routers import (  # noqa: PLC0415
+        backups, basic_udis, devices, generation, home, imports, registration,
+    )
 
-    for module in (home, basic_udis, devices, generation, imports, backups):
+    for module in (home, basic_udis, devices, generation, imports, registration, backups):
         app.include_router(module.router)
 
 

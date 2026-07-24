@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Registration status{% endblock %}
+{% block content %}
+<h2>Registration status</h2>
+<p><small>Upload the EUDAMED response (Acknowledgement XML) you received after a bulk
+   upload. Entities accepted with <code>SUCCESS</code> are flagged as registered; if an
+   entity is edited afterwards it is flagged <em>modified since upload</em>.</small></p>
+
+<form hx-post="/registration/response" hx-target="#reg-body" hx-encoding="multipart/form-data">
+  <input type="file" name="response" accept=".xml" required>
+  <button type="submit">Upload response</button>
+</form>
+
+<div id="reg-body">
+  {% include "registration/_overview.html" %}
+</div>
+{% endblock %}
