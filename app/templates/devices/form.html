@@ -7,13 +7,6 @@
   <div class="grid">
     <label>UDI-DI *
       <input name="udi_di" required maxlength="120" value="{{ row.udi_di if row else '' }}">
-      <span class="udi-check">
-        <button type="button" class="secondary outline"
-                hx-get="/udi/check?basic=false&field=udi_di"
-                hx-include="[name=udi_di],[name=issuing_entity_code]"
-                hx-target="next .udi-check-out" hx-swap="innerHTML">check digit</button>
-        <span class="udi-check-out"></span>
-      </span>
     </label>
     <label>Issuing entity *
       <select name="issuing_entity_code" required>
@@ -31,6 +24,13 @@
       </select>
     </label>
   </div>
+  <p class="udi-check">
+    <button type="button" class="secondary outline"
+            hx-get="/udi/check?basic=false&field=udi_di"
+            hx-include="[name=udi_di],[name=issuing_entity_code]"
+            hx-target="next .udi-check-out" hx-swap="innerHTML">Check / fix UDI-DI check digit</button>
+    <span class="udi-check-out"></span>
+  </p>
   <div class="grid">
     <label>Reference / catalogue number *
       <input name="reference_number" required maxlength="255" value="{{ row.reference_number if row else '' }}">
