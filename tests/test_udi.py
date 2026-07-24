@@ -45,11 +45,14 @@ def test_gmn_requires_numeric_prefix():
 
 # --- HIBCC (mod-43) ---------------------------------------------------------
 
-def test_hibcc_check_char_roundtrip():
-    full = udi.complete_hibcc("A123BJC5D6E71")
-    assert udi.is_valid_hibcc(full)
-    # tamper with the check char
-    assert not udi.is_valid_hibcc(full[:-1] + ("X" if full[-1] != "X" else "Y"))
+def test_hibcc_check_char_standard_vector():
+    # HIBC standard worked example: "+A123BJC5D6E71" -> sum 145 -> "G"
+    assert udi.hibcc_check_char("+A123BJC5D6E71") == "G"
+    assert udi.hibcc_check_char("A123BJC5D6E71") == "G"  # flag added implicitly
+    assert udi.complete_hibcc("A123BJC5D6E71") == "A123BJC5D6E71G"
+    assert udi.is_valid_hibcc("A123BJC5D6E71G")
+    assert udi.is_valid_hibcc("+A123BJC5D6E71G")
+    assert not udi.is_valid_hibcc("A123BJC5D6E71J")  # the old (wrong) value
 
 
 # --- dispatch ---------------------------------------------------------------
