@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Backups{% endblock %}
+{% block content %}
+<h2>Database backups</h2>
+<p><small>Automatic dump every {{ interval_hours | int }} h (checked hourly); the {{ keep }} most
+   recent dumps are kept in <code>backups/</code>. Restore with
+   <code>pg_restore --clean -d eudamed &lt;file&gt;</code>.</small></p>
+<button hx-post="/backups/run" hx-target="#backup-list"
+        hx-confirm="Create a database backup now?">Create backup now</button>
+<div id="backup-list">
+  {% include "backups/_list.html" %}
+</div>
+{% endblock %}

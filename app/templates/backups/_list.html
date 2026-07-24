@@ -1,0 +1,18 @@
+{% if error %}<article class="alert-error"><small>{{ error }}</small></article>{% endif %}
+{% if backups %}
+<table>
+  <thead><tr><th>File</th><th>Created (UTC)</th><th>Size</th><th></th></tr></thead>
+  <tbody>
+  {% for b in backups %}
+    <tr>
+      <td><code>{{ b.name }}</code></td>
+      <td>{{ b.created.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+      <td>{{ "%.1f" | format(b.size / 1024) }} KB</td>
+      <td><a href="/backups/download/{{ b.name }}">Download</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No backups yet.</p>
+{% endif %}

@@ -6,8 +6,8 @@ __pycache__/
 # Generated run output
 output/
 
-# Database dumps
-backups/
+# Database dumps (repo-root only; NOT app/templates/backups/)
+/backups/
 
 # Portable distribution archive (built artifact)
 EUDAMED-Upload-portable.zip

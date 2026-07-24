@@ -2,6 +2,7 @@ from lxml import etree
 
 from eudamed_tool.cli import main
 from eudamed_tool.importer import load_registration
+from eudamed_tool.versions import DTX_SCHEMA_VERSION
 from eudamed_tool.xml_generator import NS, generate_xml
 from eudamed_tool.xsd_validator import validate_xml
 
@@ -11,7 +12,7 @@ def test_generate_xml_structure(tmp_path, sample_workbook):
     xml_path = generate_xml(reg, tmp_path / "out.xml")
     root = etree.parse(str(xml_path)).getroot()
     assert root.tag == f"{{{NS['m']}}}Push"
-    assert root.get("version") == "3.0.30"
+    assert root.get("version") == DTX_SCHEMA_VERSION
     dev = root.find(f"m:payload/device:Device", NS)
     assert dev is not None
     assert dev.get(f"{{{NS['xsi']}}}type") == "device:MDRDeviceType"
