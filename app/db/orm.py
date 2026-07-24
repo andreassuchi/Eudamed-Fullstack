@@ -57,7 +57,21 @@ class TimestampMixin:
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class BasicUDIORM(TimestampMixin, Base):
+class UploadStatusMixin:
+    """EUDAMED upload state, set from an uploaded Acknowledgement response.
+
+    upload_status: NOT_UPLOADED | UPLOADED | ERROR. When UPLOADED, the
+    upload_snapshot_hash captures the entity content at acceptance time; a
+    later edit changes the live hash and the entity reads as modified.
+    """
+    upload_status: Mapped[str] = mapped_column(String(20), default="NOT_UPLOADED")
+    uploaded_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    upload_response_code: Mapped[Optional[str]] = mapped_column(String(40))
+    upload_snapshot_hash: Mapped[Optional[str]] = mapped_column(String(64))
+    upload_message: Mapped[Optional[str]] = mapped_column(Text)
+
+
+class BasicUDIORM(TimestampMixin, UploadStatusMixin, Base):
     __tablename__ = "basic_udi_di"
     id: Mapped[uuid.UUID] = mapped_column(UUID_T, primary_key=True, default=uuid.uuid4)
     basic_udi_di: Mapped[str] = mapped_column(String(120), unique=True)
@@ -82,7 +96,7 @@ class BasicUDIORM(TimestampMixin, Base):
     __table_args__ = (CheckConstraint("trim(basic_udi_di) <> ''", name="chk_basic_udi_di_not_blank"),)
 
 
-class DeviceORM(TimestampMixin, Base):
+class DeviceORM(TimestampMixin, UploadStatusMixin, Base):
     __tablename__ = "device"
     id: Mapped[uuid.UUID] = mapped_column(UUID_T, primary_key=True, default=uuid.uuid4)
     udi_di: Mapped[str] = mapped_column(String(120), unique=True)

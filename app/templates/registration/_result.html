@@ -1,0 +1,26 @@
+{% if report.error %}
+<article class="alert-error"><small>{{ report.error }}</small></article>
+{% else %}
+<article>
+  <header><strong>{{ filename }}</strong> processed —
+    {{ report.succeeded }} accepted, {{ report.matched }} matched, {{ report.unmatched }} unmatched</header>
+  <table>
+    <thead><tr><th>Entity code</th><th>Response</th><th>Matched</th><th>Details</th></tr></thead>
+    <tbody>
+    {% for l in report.lines %}
+      <tr>
+        <td><code>{{ l.entity_code }}</code></td>
+        <td class="{{ 'severity-ERROR' if l.response_code != 'SUCCESS' else '' }}">{{ l.response_code }}</td>
+        <td>{% if l.matched %}{{ l.matched }}{% else %}<span class="severity-WARNING">unmatched</span>{% endif %}</td>
+        <td><small>{{ l.messages | join("; ") }}</small></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if report.unmatched %}
+  <small>Unmatched entity codes were not found among your Basic UDI-DIs or devices —
+    check that the response belongs to this data set.</small>
+  {% endif %}
+</article>
+{% endif %}
+{% include "registration/_overview.html" %}

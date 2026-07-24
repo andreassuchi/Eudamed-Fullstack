@@ -5,7 +5,7 @@
 {% for e in errors or [] %}<article class="alert-error"><small>{{ e }}</small></article>{% endfor %}
 <p><a role="button" href="/basic-udis/new">+ New Basic UDI-DI</a></p>
 <table>
-  <thead><tr><th>Basic UDI-DI</th><th>Model name</th><th>Risk class</th><th>Type</th><th>Devices</th><th></th></tr></thead>
+  <thead><tr><th>Basic UDI-DI</th><th>Model name</th><th>Risk class</th><th>Type</th><th>Devices</th><th>Status</th><th></th></tr></thead>
   <tbody>
   {% for r in rows %}
     <tr>
@@ -14,6 +14,7 @@
       <td>{{ r.risk_class.value }}</td>
       <td>{{ r.device_type.value }}</td>
       <td><a href="/devices?basic_udi_id={{ r.id }}">{{ r.devices | length }}</a></td>
+      <td>{% with status=statuses[r.id] %}{% include "registration/_badge.html" %}{% endwith %}</td>
       <td>
         <form method="post" action="/basic-udis/{{ r.id }}/delete" style="display:inline"
               onsubmit="return confirm('Delete {{ r.basic_udi_di }}?')">
@@ -22,7 +23,7 @@
       </td>
     </tr>
   {% else %}
-    <tr><td colspan="6">No Basic UDI-DIs yet — create one or use the Excel import.</td></tr>
+    <tr><td colspan="7">No Basic UDI-DIs yet — create one or use the Excel import.</td></tr>
   {% endfor %}
   </tbody>
 </table>

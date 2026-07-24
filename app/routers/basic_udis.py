@@ -24,8 +24,12 @@ BOOL_FIELDS = list(PROFILE.basic_editable_flags)
 
 @router.get("")
 def list_page(request: Request, session: Session = Depends(get_session)):
+    from app.services import registration  # noqa: PLC0415
+    rows = crud.list_basic_udis(session)
+    statuses = {r.id: registration.sync_status(r, is_device=False) for r in rows}
     return templates.TemplateResponse(request, "basic_udis/list.html",
-                                      {"rows": crud.list_basic_udis(session)})
+                                      {"rows": rows, "statuses": statuses,
+                                       "labels": registration.STATUS_LABELS})
 
 
 @router.get("/new")

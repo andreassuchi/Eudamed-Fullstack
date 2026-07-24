@@ -25,10 +25,14 @@ def list_page(request: Request, basic_udi_id: str = "",
         filter_id = uuid.UUID(basic_udi_id) if basic_udi_id else None
     except ValueError:
         filter_id = None
+    from app.services import registration  # noqa: PLC0415
+    rows = crud.list_devices(session, filter_id)
     return templates.TemplateResponse(request, "devices/list.html", {
-        "rows": crud.list_devices(session, filter_id),
+        "rows": rows,
         "basics": crud.list_basic_udis(session),
         "filter_basic_id": filter_id,
+        "statuses": {r.id: registration.sync_status(r, is_device=True) for r in rows},
+        "labels": registration.STATUS_LABELS,
     })
 
 
