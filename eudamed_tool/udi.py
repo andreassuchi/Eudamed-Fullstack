@@ -82,12 +82,23 @@ def is_valid_gmn(code: str) -> bool:
 
 
 # --- HIBCC (LIC primary data): mod-43 ---------------------------------------
+# Code-39 character set (position == value). The HIBC Supplier Labeling Flag
+# "+" is part of the primary data message and IS included in the check sum
+# (its value is 41). Verified against the standard worked example:
+# "+A123BJC5D6E71" -> sum 145 -> 145 mod 43 = 16 -> "G".
 _HIBC_CSET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%"
 _HIBC_INDEX = {c: i for i, c in enumerate(_HIBC_CSET)}
+HIBC_FLAG = "+"
 
 
 def hibcc_check_char(data: str) -> str:
-    """HIBC mod-43 check character over the primary data (excluding the check)."""
+    """HIBC mod-43 check character over the primary data (excluding the check).
+
+    The "+" flag is included in the sum; it is prepended if the caller omitted
+    it, so both "+A123BJC5D6E71" and "A123BJC5D6E71" yield the same check char.
+    """
+    if not data.startswith(HIBC_FLAG):
+        data = HIBC_FLAG + data
     total = 0
     for ch in data.upper():
         if ch not in _HIBC_INDEX:
