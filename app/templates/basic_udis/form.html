@@ -7,6 +7,13 @@
   <div class="grid">
     <label>Basic UDI-DI *
       <input name="basic_udi_di" required maxlength="120" value="{{ row.basic_udi_di if row else '' }}">
+      <span class="udi-check">
+        <button type="button" class="secondary outline"
+                hx-get="/udi/check?basic=true&field=basic_udi_di"
+                hx-include="[name=basic_udi_di],[name=issuing_entity_code]"
+                hx-target="next .udi-check-out" hx-swap="innerHTML">check digit</button>
+        <span class="udi-check-out"></span>
+      </span>
     </label>
     <label>Issuing entity *
       <select name="issuing_entity_code" required>

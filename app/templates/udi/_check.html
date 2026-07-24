@@ -1,0 +1,16 @@
+{% if not code %}
+  <small class="muted">Enter a code, then check.</small>
+{% elif not result.supported %}
+  <small class="muted">{{ result.message }}</small>
+{% elif result.valid %}
+  <small class="badge badge-ok">✓ valid {{ result.scheme }} check digit</small>
+{% else %}
+  <small class="badge badge-warn">✗ {{ result.message }}</small>
+  {% if result.corrected and result.corrected != code %}
+  <button type="button" class="secondary outline" style="margin-left:0.4rem"
+          onclick="document.querySelector('[name={{ field }}]').value = '{{ result.corrected }}';
+                   this.outerHTML = '<small class=&quot;badge badge-ok&quot;>✓ applied {{ result.corrected }}</small>';">
+    Apply {{ result.corrected }}
+  </button>
+  {% endif %}
+{% endif %}
