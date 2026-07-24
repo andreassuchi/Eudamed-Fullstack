@@ -2,6 +2,16 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <h2>Dashboard</h2>
+
+<article class="target-versions">
+  <header>Built for</header>
+  <div class="version-row">
+    <div><small>EUDAMED release</small><strong>v{{ eudamed_version }}</strong></div>
+    <div><small>DTX schema</small><strong>v{{ dtx_schema_version }}</strong></div>
+    <div><small>Field profile</small><strong>{{ profile.name }}</strong></div>
+  </div>
+</article>
+
 <div class="grid">
   <article><h4>{{ n_basics }}</h4>Basic UDI-DIs</article>
   <article><h4>{{ n_devices }}</h4>Devices</article>

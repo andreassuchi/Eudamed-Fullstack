@@ -150,6 +150,32 @@ article > header {
 article.alert-error { border-color: var(--stamp); }
 article.alert-error, article.alert-error small { color: var(--stamp); }
 
+/* "Built for" target-versions banner on the dashboard */
+.target-versions {
+  border-left: 3px solid var(--blue-deep);
+}
+.target-versions > header {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.version-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+}
+.version-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.version-row strong {
+  font-size: 20px;
+  color: var(--blue-deep);
+}
+
 /* stat tiles on the dashboard */
 .grid > article { margin: 0; text-align: left; }
 .grid > article h4 {

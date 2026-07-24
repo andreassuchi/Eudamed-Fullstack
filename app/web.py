@@ -15,6 +15,7 @@ from eudamed_tool.models import (
     RiskClass,
 )
 from eudamed_tool.profile import get_profile
+from eudamed_tool.versions import DTX_SCHEMA_VERSION, EUDAMED_VERSION
 
 PROFILE = get_profile(settings.profile)
 
@@ -47,6 +48,8 @@ templates.env.globals.update(
     market_countries=sorted(EU_MARKET_COUNTRIES),
     profile=PROFILE,
     basic_flags=[(f, BASIC_FLAG_LABELS[f]) for f in PROFILE.basic_editable_flags],
+    eudamed_version=EUDAMED_VERSION,
+    dtx_schema_version=DTX_SCHEMA_VERSION,
 )
 
 

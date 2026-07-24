@@ -52,7 +52,9 @@ def test_crud_roundtrip(db_session):
     assert crud.list_basic_udis(db_session) == []
 
 
-def test_convert_roundtrip_and_derived_market_flag(db_session):
+def test_convert_roundtrip_and_derived_market_flag(db_session, monkeypatch):
+    from app.config import settings
+    monkeypatch.setattr(settings, "profile", "as-consult")  # test the derivation rule
     crud.save_basic_udi(db_session, _demo_basic())
     crud.save_device(db_session, _demo_device(
         market_countries=[MarketCountry(country_code="DE"),

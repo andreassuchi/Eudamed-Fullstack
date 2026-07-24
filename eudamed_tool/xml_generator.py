@@ -19,8 +19,9 @@ from pathlib import Path
 from lxml import etree
 
 from .models import BasicUDI, Device, Registration
+from .versions import DTX_SCHEMA_VERSION
 
-XSD_VERSION = "3.0.30"
+XSD_VERSION = DTX_SCHEMA_VERSION
 
 NS = {
     "m": "https://ec.europa.eu/tools/eudamed/dtx/servicemodel/Message/v1",
