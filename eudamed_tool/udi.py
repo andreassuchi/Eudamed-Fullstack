@@ -49,20 +49,29 @@ _GMN_MIN_BASE = 6   # shortest base that GS1 accepts before the check pair
 _GMN_MAX_BASE = len(_GMN_WEIGHTS)  # 23
 
 
-def gmn_check_pair(base: str) -> str:
-    """Two GMN check characters for the base (GMN without the check pair)."""
-    if not (_GMN_MIN_BASE <= len(base) <= _GMN_MAX_BASE):
-        raise ValueError(f"GMN base must be {_GMN_MIN_BASE}..{_GMN_MAX_BASE} characters")
-    if not base[:5].isdigit():
-        raise ValueError("GMN must start with a 5-digit GS1 Company Prefix")
+def _mod1021_32_pair(base: str) -> str:
+    """MOD 1021,32 two-character check pair over `base` (shared by the GS1 GMN
+    and the HIBCC Basic UDI-DI). Character values from cset82, prime weights,
+    output pair from the 32-character depleted set."""
+    if not (1 <= len(base) <= _GMN_MAX_BASE):
+        raise ValueError(f"check base must be 1..{_GMN_MAX_BASE} characters")
     offset = len(_GMN_WEIGHTS) - len(base)
     total = 0
     for i, ch in enumerate(base):
         if ch not in _CSET82_INDEX:
-            raise ValueError(f"invalid GMN character: {ch!r}")
+            raise ValueError(f"invalid character: {ch!r}")
         total += _CSET82_INDEX[ch] * _GMN_WEIGHTS[offset + i]
     total %= 1021
     return _CSET32[total // 32] + _CSET32[total % 32]
+
+
+def gmn_check_pair(base: str) -> str:
+    """Two GS1 GMN check characters for the base (GMN without the check pair)."""
+    if not (_GMN_MIN_BASE <= len(base) <= _GMN_MAX_BASE):
+        raise ValueError(f"GMN base must be {_GMN_MIN_BASE}..{_GMN_MAX_BASE} characters")
+    if not base[:5].isdigit():
+        raise ValueError("GMN must start with a 5-digit GS1 Company Prefix")
+    return _mod1021_32_pair(base)
 
 
 def complete_gmn(base: str) -> str:
@@ -120,13 +129,45 @@ def is_valid_hibcc(code: str) -> bool:
         return False
 
 
+# --- HIBCC Basic UDI-DI: MOD 1021,32 (same core as the GS1 GMN) --------------
+# Structure: "++" flag + LIC (4) + Model Identifier (1..17) + 2 check chars.
+# The "++" flag is part of the message and included in the sum. Verified against
+# the HIBCC example "++A999MODELIDENTIFIER11" -> 774 -> "S8".
+HIBC_BASIC_FLAG = "++"
+
+
+def _hibcc_basic_base(base: str) -> str:
+    return base if base.startswith(HIBC_BASIC_FLAG) else HIBC_BASIC_FLAG + base.lstrip("+")
+
+
+def hibcc_basic_check_pair(base: str) -> str:
+    return _mod1021_32_pair(_hibcc_basic_base(base))
+
+
+def complete_hibcc_basic(base: str) -> str:
+    full_base = _hibcc_basic_base(base)
+    return full_base + hibcc_basic_check_pair(full_base)
+
+
+def is_valid_hibcc_basic(code: str) -> bool:
+    if len(code) < 3:
+        return False
+    base, checks = code[:-2], code[-2:]
+    if set(checks) - _CSET32_SET:
+        return False
+    try:
+        return hibcc_basic_check_pair(base) == checks
+    except ValueError:
+        return False
+
+
 # --- dispatch by issuing entity ---------------------------------------------
 
 @dataclass
 class UdiCheck:
     supported: bool          # False for entities with no implemented scheme
     valid: Optional[bool]    # None when unsupported
-    scheme: str              # "GTIN" | "GMN" | "HIBC" | "unsupported"
+    scheme: str              # "GTIN" | "GMN" | "HIBC" | "HIBC-BASIC" | "unsupported"
     corrected: Optional[str] = None  # full code with the correct check digit(s)
     message: str = ""
 
@@ -136,7 +177,7 @@ def _scheme_for(issuing_entity: str, is_basic: bool) -> Optional[str]:
     if ie == "GS1":
         return "GMN" if is_basic else "GTIN"
     if ie == "HIBCC":
-        return "HIBC"
+        return "HIBC-BASIC" if is_basic else "HIBC"
     return None
 
 
@@ -154,7 +195,10 @@ def validate_di(code: str, issuing_entity: str, *, is_basic: bool) -> UdiCheck:
         elif scheme == "GMN":
             valid = is_valid_gmn(code)
             corrected = complete_gmn(code[:-2]) if len(code) >= _GMN_MIN_BASE + 2 else None
-        else:  # HIBC
+        elif scheme == "HIBC-BASIC":
+            valid = is_valid_hibcc_basic(code)
+            corrected = complete_hibcc_basic(code[:-2]) if len(code) >= 3 else None
+        else:  # HIBC (UDI-DI, mod-43)
             valid = is_valid_hibcc(code)
             corrected = complete_hibcc(code[:-1]) if len(code) >= 2 else None
     except ValueError as exc:
@@ -175,6 +219,8 @@ def complete_di(base: str, issuing_entity: str, *, is_basic: bool) -> str:
         return complete_gtin(base)
     if scheme == "GMN":
         return complete_gmn(base)
+    if scheme == "HIBC-BASIC":
+        return complete_hibcc_basic(base)
     if scheme == "HIBC":
         return complete_hibcc(base)
     raise ValueError(f"No check-digit scheme for issuing entity {issuing_entity!r}")
