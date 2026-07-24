@@ -27,7 +27,7 @@
   <p class="udi-check">
     <button type="button" class="secondary outline"
             hx-get="/udi/check?basic=false&field=udi_di"
-            hx-include="[name=udi_di],[name=issuing_entity_code]"
+            hx-vals='js:{code: document.querySelector("[name=udi_di]").value, issuing_entity_code: document.querySelector("[name=issuing_entity_code]").value}'
             hx-target="next .udi-check-out" hx-swap="innerHTML">Check / fix UDI-DI check digit</button>
     <span class="udi-check-out"></span>
   </p>
