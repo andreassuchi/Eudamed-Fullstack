@@ -13,19 +13,31 @@
   {% endif %}
 </div>
 
+<p><small>EUDAMED accepts one entity type per file. A Basic UDI-DI with several
+   UDI-DIs is therefore split: upload the <strong>Basic UDI-DI</strong> file first,
+   then the <strong>UDI-DI</strong> file. Device bundles (1:1) have no ordering
+   dependency.</small></p>
+
 <h4>Generation history</h4>
 {% if jobs %}
 <table>
-  <thead><tr><th>Requested</th><th>Status</th><th>Devices</th><th>XSD</th><th>SHA-256</th><th></th></tr></thead>
+  <thead><tr><th>Requested</th><th>Status</th><th>Devices</th><th>Files (upload order)</th></tr></thead>
   <tbody>
   {% for j in jobs %}
     <tr>
       <td>{{ j.requested_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
       <td class="status-{{ j.status }}">{{ j.status }}</td>
       <td>{{ j.device_count }}</td>
-      <td>{{ j.xsd_status or "—" }}</td>
-      <td><small>{{ (j.xml_sha256 or "")[:16] }}</small></td>
-      <td>{% if j.xml_path %}<a href="/generation/jobs/{{ j.id }}/download">Download XML</a>{% endif %}</td>
+      <td>
+        {% for f in (j.files or []) %}
+          <div>
+            {% if f.upload_order %}<small class="muted">#{{ f.upload_order }}</small>{% endif %}
+            <a href="/generation/jobs/{{ j.id }}/download/{{ f.filename }}">{{ f.label }}</a>
+            <small>({{ f.entity_count }}) — XSD {{ f.xsd_status }}
+              · {{ (f.sha256 or "")[:12] }}</small>
+          </div>
+        {% else %}<small>—</small>{% endfor %}
+      </td>
     </tr>
   {% endfor %}
   </tbody>

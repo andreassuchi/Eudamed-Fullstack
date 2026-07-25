@@ -68,14 +68,21 @@ def write_validation_report(out_dir: Path, report: Optional[ValidationReport],
     return payload
 
 
-def write_manifest(out_dir: Path, workbook_path: Path, xml_path: Optional[Path],
+def write_manifest(out_dir: Path, workbook_path: Path,
+                   xml_paths: Optional[list[Path]] | Optional[Path],
                    validation_payload: dict) -> Path:
     error_count = sum(1 for f in validation_payload["findings"] if f["severity"] == Severity.ERROR.value)
+    if xml_paths is None:
+        paths: list[Path] = []
+    elif isinstance(xml_paths, (str, Path)):
+        paths = [Path(xml_paths)]
+    else:
+        paths = list(xml_paths)
     manifest = {
         "tool_version": __version__,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source_workbook": {"path": str(workbook_path), "sha256": sha256_file(workbook_path)},
-        "generated_xml": ({"path": xml_path.name, "sha256": sha256_file(xml_path)} if xml_path else None),
+        "generated_xml": [{"path": p.name, "sha256": sha256_file(p)} for p in paths],
         "validation": {
             "blocking": validation_payload["blocking"],
             "error_count": error_count,

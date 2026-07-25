@@ -15,8 +15,14 @@ from app.db.orm import XmlGenerationJobORM
 from app.services.convert import load_registration_from_db
 from app.services.validation import run_validation
 from eudamed_tool.reporting import sha256_file
-from eudamed_tool.xml_generator import generate_xml
+from eudamed_tool.xml_generator import generate_messages
 from eudamed_tool.xsd_validator import validate_xml
+
+ROLE_LABELS = {
+    "device_bundle": "Device bundle (1:1)",
+    "basic_udi": "Basic UDI-DI",
+    "udi_di": "UDI-DI",
+}
 
 
 def run_generation(session: Session,
@@ -40,15 +46,33 @@ def run_generation(session: Session,
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     out_dir = settings.output_dir / stamp
-    xml_path = generate_xml(registration, out_dir / "device_upload.xml")
-    job.xml_path = str(xml_path)
-    job.xml_sha256 = sha256_file(xml_path)
+    messages = generate_messages(registration, out_dir)
 
-    xsd = validate_xml(xml_path, settings.xsd_dir)
-    job.xsd_status = xsd.status
-    if xsd.errors:
-        job.xsd_errors = {"errors": xsd.errors[:50]}
-    job.status = "READY_FOR_UPLOAD" if xsd.status == "PASSED" else "XSD_VALIDATION_FAILED"
+    files = []
+    all_errors = []
+    all_passed = True
+    for m in sorted(messages, key=lambda x: (x.upload_order, x.role)):
+        xsd = validate_xml(m.path, settings.xsd_dir)
+        all_passed = all_passed and xsd.status == "PASSED"
+        all_errors.extend(f"{m.path.name}: {e}" for e in xsd.errors)
+        files.append({
+            "role": m.role,
+            "label": ROLE_LABELS.get(m.role, m.role),
+            "filename": m.path.name,
+            "entity_count": m.entity_count,
+            "upload_order": m.upload_order,
+            "sha256": sha256_file(m.path),
+            "xsd_status": xsd.status,
+        })
+
+    job.output_dir = str(out_dir)
+    job.files = files
+    job.xml_path = files[0]["filename"] if files else None
+    job.xml_sha256 = files[0]["sha256"] if files else None
+    job.xsd_status = "PASSED" if all_passed else "FAILED"
+    if all_errors:
+        job.xsd_errors = {"errors": all_errors[:50]}
+    job.status = "READY_FOR_UPLOAD" if all_passed else "XSD_VALIDATION_FAILED"
     session.commit()
     return job
 

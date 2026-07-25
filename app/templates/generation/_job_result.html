@@ -2,17 +2,34 @@
   <header>Generation job — <span class="status-{{ job.status }}">{{ job.status }}</span></header>
   <ul>
     <li>Devices in message: {{ job.device_count }}</li>
-    {% if job.xsd_status %}<li>XSD validation: {{ job.xsd_status }}</li>{% endif %}
-    {% if job.xml_sha256 %}<li>XML SHA-256: <code>{{ job.xml_sha256 }}</code></li>{% endif %}
+    {% if job.xsd_status %}<li>XSD validation (all files): {{ job.xsd_status }}</li>{% endif %}
   </ul>
+  {% if job.files %}
+  <table>
+    <thead><tr><th>Upload order</th><th>File</th><th>Entities</th><th>XSD</th><th>SHA-256</th></tr></thead>
+    <tbody>
+    {% for f in job.files %}
+      <tr>
+        <td>{{ f.upload_order }}</td>
+        <td><a href="/generation/jobs/{{ job.id }}/download/{{ f.filename }}">{{ f.label }}</a>
+            <br><small>{{ f.filename }}</small></td>
+        <td>{{ f.entity_count }}</td>
+        <td>{{ f.xsd_status }}</td>
+        <td><small>{{ (f.sha256 or "")[:16] }}</small></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if job.files | selectattr("role", "equalto", "udi_di") | list %}
+  <p><small><strong>Upload order:</strong> the Basic UDI-DI file must be accepted by
+     EUDAMED before the UDI-DI file (the UDI-DIs reference it). Device bundles are
+     independent. Upload to the playground first.</small></p>
+  {% endif %}
+  {% endif %}
   {% if job.xsd_errors %}
   <details><summary>XSD errors</summary>
     <ul>{% for e in job.xsd_errors["errors"] %}<li><small>{{ e }}</small></li>{% endfor %}</ul>
   </details>
-  {% endif %}
-  {% if job.status == "READY_FOR_UPLOAD" %}
-  <p><a role="button" href="/generation/jobs/{{ job.id }}/download">Download device_upload.xml</a>
-     — upload it in the EUDAMED web UI (playground first!).</p>
   {% endif %}
 </article>
 {% if run %}{% include "generation/_validation_result.html" %}{% endif %}

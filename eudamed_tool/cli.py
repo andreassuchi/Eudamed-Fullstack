@@ -18,7 +18,7 @@ from .profile import get_profile
 from .reporting import write_manifest, write_validation_report
 from .template import create_template
 from .validation import validate
-from .xml_generator import generate_xml
+from .xml_generator import generate_messages
 from .xsd_validator import validate_xml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -46,17 +46,24 @@ def cmd_generate(args) -> int:
     if payload["blocking"]:
         print("XML generation refused: blocking validation errors (BR-009).")
         return 1
-    xml_path = generate_xml(result.registration, out_dir / "device_upload.xml")
-    print(f"XML written: {xml_path}")
-    xsd = validate_xml(xml_path)
-    print(f"XSD validation: {xsd.status}" + (f" (schema: {xsd.schema_file})" if xsd.schema_file else ""))
-    for e in xsd.errors:
-        print(f"  - {e}")
-    write_manifest(out_dir, workbook, xml_path, payload)
-    if xsd.status != "PASSED":
-        print("WARNING: XML is NOT cleared for upload (XSD validation did not pass).")
+    messages = generate_messages(result.registration, out_dir)
+    all_passed = True
+    role_label = {"device_bundle": "Device bundle (1:1)",
+                  "basic_udi": "Basic UDI-DI", "udi_di": "UDI-DI"}
+    for m in sorted(messages, key=lambda x: x.upload_order):
+        xsd = validate_xml(m.path)
+        all_passed = all_passed and xsd.status == "PASSED"
+        print(f"[upload #{m.upload_order}] {role_label.get(m.role, m.role)}: "
+              f"{m.path.name} ({m.entity_count}) - XSD {xsd.status}")
+        for e in xsd.errors:
+            print(f"    - {e}")
+    write_manifest(out_dir, workbook, [m.path for m in messages], payload)
+    if any(m.role == "udi_di" for m in messages):
+        print("Upload order: Basic UDI-DI file first, then the UDI-DI file.")
+    if not all_passed:
+        print("WARNING: not cleared for upload (XSD validation did not pass).")
         return 1
-    print("XML passed XSD validation.")
+    print("All files passed XSD validation.")
     return 0
 
 

@@ -1,20 +1,27 @@
-"""Generate the EUDAMED device bulk-upload XML (official DTX schema, v3.0.30).
+"""Generate the EUDAMED device bulk-upload XML (official DTX schema).
 
-Structure derived from the official XSD package in xsd/:
-- Root: m:Push (service/Message.xsd) with the message envelope
-- Payload: device:Device with xsi:type="device:MDRDeviceType" (DI.xsd),
-  containing device:MDRBasicUDI + device:MDRUDIDIData per device.
-  One Push message carries up to 300 Device entities.
+EUDAMED's payload is an <xs:choice>: one upload file carries exactly ONE
+entity type (1..300 of it). A Basic UDI-DI may only appear once per file, so
+the bundled Device format (device:Device = one MDRBasicUDI + one MDRUDIDIData)
+is valid ONLY for a 1:1 Basic UDI-DI ↔ UDI-DI relationship.
 
-Element order follows the XSD extension chains exactly
-(Entity -> BasicUDIType -> DeviceBasicUDIType -> MDRBasicUDIType and
- Entity -> UDIDIType -> UDIDIDataType -> DeviceUDIDIDataType -> MDRUDIDIDataType).
+generate_messages() therefore emits up to three files:
+- device_bundle_upload.xml : device:Device bundles for Basic UDI-DIs with
+  exactly one UDI-DI (self-contained, no upload-order dependency)
+- 1_basic_udi_upload.xml   : device:BasicUDI entities for Basic UDI-DIs that
+  have several (or zero) UDI-DIs
+- 2_udi_di_upload.xml      : device:UDIDIData entities (each references its
+  Basic UDI-DI); upload AFTER the Basic UDI-DI file is accepted
+
+Element order follows the XSD extension chains exactly.
 """
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable, List
 
 from lxml import etree
 
@@ -66,56 +73,56 @@ def _endpoint(parent, tag: str, actor_code: str, service_id: str):
     return ep
 
 
-def _basic_udi_element(parent, b: BasicUDI) -> None:
-    """device:MDRBasicUDI (content model of basicudi:MDRBasicUDIType)."""
-    bn = _el(parent, "device", "MDRBasicUDI")
+# --- entity content fillers (shared by bundle and standalone forms) ----------
+
+def _fill_basic_udi(el, b: BasicUDI) -> None:
+    """Content model of (basicudi:)MDRBasicUDIType."""
     # BasicUDIType
-    _el(bn, "basicudi", "riskClass", b.risk_class.value)
-    model_name = _el(bn, "basicudi", "modelName")
+    _el(el, "basicudi", "riskClass", b.risk_class.value)
+    model_name = _el(el, "basicudi", "modelName")
     _el(model_name, "commondi", "name", b.model_name)
-    _identifier(bn, "basicudi", "identifier", b.basic_udi_di, b.issuing_entity_code.value)
+    _identifier(el, "basicudi", "identifier", b.basic_udi_di, b.issuing_entity_code.value)
     # DeviceBasicUDIType
-    _el(bn, "basicudi", "animalTissuesCells", b.animal_tissues_cells)
-    _el(bn, "basicudi", "humanTissuesCells", b.human_tissues_cells)
-    _el(bn, "basicudi", "MFActorCode", b.manufacturer_srn)
+    _el(el, "basicudi", "animalTissuesCells", b.animal_tissues_cells)
+    _el(el, "basicudi", "humanTissuesCells", b.human_tissues_cells)
+    _el(el, "basicudi", "MFActorCode", b.manufacturer_srn)
     # MDRBasicUDIType
-    _el(bn, "basicudi", "humanProductCheck", b.human_product_check)
-    _el(bn, "basicudi", "medicinalProductCheck", b.medicinal_product_check)
-    _el(bn, "basicudi", "type", b.device_type.value)
+    _el(el, "basicudi", "humanProductCheck", b.human_product_check)
+    _el(el, "basicudi", "medicinalProductCheck", b.medicinal_product_check)
+    _el(el, "basicudi", "type", b.device_type.value)
     # commondi:MDApplicablePropertiesGroup
-    _el(bn, "commondi", "active", b.active)
-    _el(bn, "commondi", "administeringMedicine", b.administering_medicine)
-    _el(bn, "commondi", "implantable", b.implantable)
-    _el(bn, "commondi", "measuringFunction", b.measuring_function)
-    _el(bn, "commondi", "reusable", b.reusable)
+    _el(el, "commondi", "active", b.active)
+    _el(el, "commondi", "administeringMedicine", b.administering_medicine)
+    _el(el, "commondi", "implantable", b.implantable)
+    _el(el, "commondi", "measuringFunction", b.measuring_function)
+    _el(el, "commondi", "reusable", b.reusable)
 
 
-def _udi_di_element(parent, d: Device) -> None:
-    """device:MDRUDIDIData (content model of udidi:MDRUDIDIDataType)."""
-    dn = _el(parent, "device", "MDRUDIDIData")
+def _fill_udi_di(el, d: Device) -> None:
+    """Content model of (udidi:)MDRUDIDIDataType."""
     # UDIDIType
-    _identifier(dn, "udidi", "identifier", d.udi_di, d.issuing_entity_code.value)
-    status = _el(dn, "udidi", "status")
+    _identifier(el, "udidi", "identifier", d.udi_di, d.issuing_entity_code.value)
+    status = _el(el, "udidi", "status")
     _el(status, "commondi", "code", d.device_status.value)
     # UDIDIDataType
-    _identifier(dn, "udidi", "basicUDIIdentifier", d.basic_udi_di, d.issuing_entity_code.value)
-    _el(dn, "udidi", "MDNCodes", " ".join(c.emdn_code for c in d.emdn_codes))
+    _identifier(el, "udidi", "basicUDIIdentifier", d.basic_udi_di, d.issuing_entity_code.value)
+    _el(el, "udidi", "MDNCodes", " ".join(c.emdn_code for c in d.emdn_codes))
     if d.production_identifiers:
-        _el(dn, "udidi", "productionIdentifier",
+        _el(el, "udidi", "productionIdentifier",
             " ".join(pi.value for pi in d.production_identifiers))
-    _el(dn, "udidi", "referenceNumber", d.reference_number)
-    _el(dn, "udidi", "sterile", d.sterile)
-    _el(dn, "udidi", "sterilization", d.sterilization)
+    _el(el, "udidi", "referenceNumber", d.reference_number)
+    _el(el, "udidi", "sterile", d.sterile)
+    _el(el, "udidi", "sterilization", d.sterilization)
     if d.trade_names:
-        tns = _el(dn, "udidi", "tradeNames")
+        tns = _el(el, "udidi", "tradeNames")
         for tn in d.trade_names:
             name = _el(tns, "lsn", "name")
             _el(name, "lsn", "language", tn.language_code)
             _el(name, "lsn", "textValue", tn.trade_name)
     # DeviceUDIDIDataType
-    _el(dn, "udidi", "numberOfReuses", d.number_of_reuses)
+    _el(el, "udidi", "numberOfReuses", d.number_of_reuses)
     if d.market_countries:
-        mis = _el(dn, "udidi", "marketInfos")
+        mis = _el(el, "udidi", "marketInfos")
         for m in d.market_countries:
             mi = _el(mis, "marketinfo", "marketInfo")
             _el(mi, "marketinfo", "country", m.country_code)
@@ -125,21 +132,40 @@ def _udi_di_element(parent, d: Device) -> None:
             if m.first_market_date:
                 _el(mi, "marketinfo", "startDate", m.first_market_date.isoformat())
     if d.direct_marking_di:
-        marking = _el(dn, "udidi", "deviceMarking")
+        marking = _el(el, "udidi", "deviceMarking")
         _identifier(marking, "udidi", "directMarkingDI",
                     d.direct_marking_di, d.issuing_entity_code.value)
-    _el(dn, "udidi", "baseQuantity", d.base_quantity)
+    _el(el, "udidi", "baseQuantity", d.base_quantity)
     # MDRUDIDIDataType
-    _el(dn, "udidi", "latex", d.latex)
-    _el(dn, "udidi", "reprocessed", d.reprocessed)
+    _el(el, "udidi", "latex", d.latex)
+    _el(el, "udidi", "reprocessed", d.reprocessed)
 
 
-def generate_xml(registration: Registration, output_path: str | Path,
-                 recipient_actor: str = "EUDAMED") -> Path:
-    """Write one m:Push message registering all devices (Basic UDI + UDI-DI pairs)."""
-    basic_index = registration.basic_udi_index()
-    sender_srn = registration.basic_udis[0].manufacturer_srn if registration.basic_udis else "NA"
+# --- payload item builders ---------------------------------------------------
 
+def _add_bundle(payload, b: BasicUDI, d: Device) -> None:
+    dev = _el(payload, "device", "Device")
+    dev.set(q("xsi", "type"), "device:MDRDeviceType")
+    _fill_basic_udi(_el(dev, "device", "MDRBasicUDI"), b)
+    _fill_udi_di(_el(dev, "device", "MDRUDIDIData"), d)
+
+
+def _add_basic_udi(payload, b: BasicUDI) -> None:
+    el = _el(payload, "device", "BasicUDI")
+    el.set(q("xsi", "type"), "device:MDRBasicUDIType")
+    _fill_basic_udi(el, b)
+
+
+def _add_udi_di(payload, d: Device) -> None:
+    el = _el(payload, "device", "UDIDIData")
+    el.set(q("xsi", "type"), "device:MDRUDIDIDataType")
+    _fill_udi_di(el, d)
+
+
+# --- message envelope --------------------------------------------------------
+
+def _write_message(path: Path, sender_srn: str, recipient_actor: str,
+                   fill_payload: Callable[[etree._Element], None]) -> Path:
     root = etree.Element(q("m", "Push"), nsmap=NS)
     root.set("version", XSD_VERSION)
     _el(root, "m", "correlationID", str(uuid.uuid4()))
@@ -148,15 +174,73 @@ def generate_xml(registration: Registration, output_path: str | Path,
     _el(root, "m", "messageID", str(uuid.uuid4()))
     _endpoint(root, "recipient", recipient_actor, "DEVICE")
     payload = _el(root, "m", "payload")
-    for d in registration.devices:
-        dev = _el(payload, "device", "Device")
-        dev.set(q("xsi", "type"), "device:MDRDeviceType")
-        _basic_udi_element(dev, basic_index[d.basic_udi_di])
-        _udi_di_element(dev, d)
+    fill_payload(payload)
     _endpoint(root, "sender", sender_srn, "DEVICE")
-
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    etree.ElementTree(root).write(str(output_path), encoding="UTF-8",
+    path.parent.mkdir(parents=True, exist_ok=True)
+    etree.ElementTree(root).write(str(path), encoding="UTF-8",
                                   xml_declaration=True, pretty_print=True)
-    return output_path
+    return path
+
+
+@dataclass
+class GeneratedMessage:
+    role: str          # "device_bundle" | "basic_udi" | "udi_di"
+    path: Path
+    entity_count: int
+    upload_order: int  # 1 = upload first; files with the same order are independent
+
+
+def generate_messages(registration: Registration, out_dir: str | Path,
+                      recipient_actor: str = "EUDAMED") -> List[GeneratedMessage]:
+    """Emit the EUDAMED upload files, bundling 1:1 pairs and splitting N:1.
+
+    - Basic UDI-DI with exactly ONE UDI-DI -> device:Device bundle
+    - Basic UDI-DI with zero or several UDI-DIs -> device:BasicUDI (+ its
+      UDI-DIs as device:UDIDIData referencing it)
+    """
+    out_dir = Path(out_dir)
+    sender = registration.basic_udis[0].manufacturer_srn if registration.basic_udis else "NA"
+
+    by_basic: dict[str, List[Device]] = {}
+    for d in registration.devices:
+        by_basic.setdefault(d.basic_udi_di, []).append(d)
+
+    bundle_pairs: List[tuple[BasicUDI, Device]] = []
+    split_basics: List[BasicUDI] = []
+    split_devices: List[Device] = []
+    for b in registration.basic_udis:
+        devs = by_basic.get(b.basic_udi_di, [])
+        if len(devs) == 1:
+            bundle_pairs.append((b, devs[0]))
+        else:
+            split_basics.append(b)
+            split_devices.extend(devs)
+
+    messages: List[GeneratedMessage] = []
+    if bundle_pairs:
+        path = _write_message(
+            out_dir / "device_bundle_upload.xml", sender, recipient_actor,
+            lambda pl: [_add_bundle(pl, b, d) for b, d in bundle_pairs])
+        messages.append(GeneratedMessage("device_bundle", path, len(bundle_pairs), 1))
+    if split_basics:
+        path = _write_message(
+            out_dir / "1_basic_udi_upload.xml", sender, recipient_actor,
+            lambda pl: [_add_basic_udi(pl, b) for b in split_basics])
+        messages.append(GeneratedMessage("basic_udi", path, len(split_basics), 1))
+    if split_devices:
+        path = _write_message(
+            out_dir / "2_udi_di_upload.xml", sender, recipient_actor,
+            lambda pl: [_add_udi_di(pl, d) for d in split_devices])
+        messages.append(GeneratedMessage("udi_di", path, len(split_devices), 2))
+    return messages
+
+
+def generate_xml(registration: Registration, output_path: str | Path,
+                 recipient_actor: str = "EUDAMED") -> Path:
+    """Single all-bundle Device message (valid for 1:1 data). Kept for the
+    simple path and tests; use generate_messages() for the general case."""
+    index = registration.basic_udi_index()
+    sender = registration.basic_udis[0].manufacturer_srn if registration.basic_udis else "NA"
+    return _write_message(
+        Path(output_path), sender, recipient_actor,
+        lambda pl: [_add_bundle(pl, index[d.basic_udi_di], d) for d in registration.devices])

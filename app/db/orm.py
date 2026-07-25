@@ -216,4 +216,7 @@ class XmlGenerationJobORM(Base):
     xsd_status: Mapped[Optional[str]] = mapped_column(String(10))  # PASSED | FAILED | SKIPPED
     xsd_errors: Mapped[Optional[dict]] = mapped_column(JSON_T)
     app_version: Mapped[str] = mapped_column(String(20), default="")
+    output_dir: Mapped[Optional[str]] = mapped_column(String(500))
+    # per-file metadata: [{role, filename, entity_count, upload_order, sha256, xsd_status}]
+    files: Mapped[Optional[list]] = mapped_column(JSON_T)
 
