@@ -5,15 +5,20 @@ entity type (1..300 of it). A Basic UDI-DI may only appear once per file, so
 the bundled Device format (device:Device = one MDRBasicUDI + one MDRUDIDIData)
 is valid ONLY for a 1:1 Basic UDI-DI ↔ UDI-DI relationship.
 
-generate_messages() therefore emits up to three files:
-- device_bundle_upload.xml : device:Device bundles for Basic UDI-DIs with
-  exactly one UDI-DI (self-contained, no upload-order dependency)
-- 1_basic_udi_upload.xml   : device:BasicUDI entities for Basic UDI-DIs that
-  have several (or zero) UDI-DIs
-- 2_udi_di_upload.xml      : device:UDIDIData entities (each references its
-  Basic UDI-DI); upload AFTER the Basic UDI-DI file is accepted
+Per the DTX services definition, a NEW Basic UDI-DI is registered only through
+the DEVICE service as a device:Device bundle (MDRBasicUDI + one MDRUDIDIData);
+there is no BASIC_UDI POST (that service is PATCH/update only). Additional
+UDI-DIs of the same Basic UDI-DI are registered through the UDI_DI service.
 
-Element order follows the XSD extension chains exactly.
+generate_messages() therefore emits up to two files:
+- 1_device_upload.xml : device:Device, one per Basic UDI-DI, each bundling the
+  Basic UDI-DI with its FIRST UDI-DI            (service DEVICE.POST)
+- 2_udi_di_upload.xml : device:UDIDIData for the 2nd..Nth UDI-DIs of any Basic
+  UDI-DI that has several; each references its Basic UDI-DI (service UDI_DI.POST,
+  upload AFTER the device file is accepted)
+
+Each Basic UDI-DI appears exactly once (in the device file). Element order
+follows the XSD extension chains exactly.
 """
 from __future__ import annotations
 
@@ -152,12 +157,6 @@ def _add_bundle(payload, b: BasicUDI, d: Device) -> None:
     _fill_udi_di(_el(dev, "device", "MDRUDIDIData"), d)
 
 
-def _add_basic_udi(payload, b: BasicUDI) -> None:
-    el = _el(payload, "device", "BasicUDI")
-    el.set(q("xsi", "type"), "device:MDRBasicUDIType")
-    _fill_basic_udi(el, b)
-
-
 def _add_udi_di(payload, d: Device) -> None:
     el = _el(payload, "device", "UDIDIData")
     el.set(q("xsi", "type"), "device:MDRUDIDIDataType")
@@ -169,8 +168,7 @@ def _add_udi_di(payload, d: Device) -> None:
 # The message service must match the payload entity type, otherwise EUDAMED
 # rejects with ERR-DTX-EUD-103.03-02 ("XML does not match selected service").
 SERVICE_ID = {
-    "device_bundle": "DEVICE",
-    "basic_udi": "BASIC_UDI",
+    "device": "DEVICE",
     "udi_di": "UDI_DI",
 }
 
@@ -195,7 +193,7 @@ def _write_message(path: Path, sender_srn: str, recipient_actor: str, service_id
 
 @dataclass
 class GeneratedMessage:
-    role: str          # "device_bundle" | "basic_udi" | "udi_di"
+    role: str          # "device" | "udi_di"
     path: Path
     entity_count: int
     upload_order: int  # 1 = upload first; files with the same order are independent
@@ -204,11 +202,13 @@ class GeneratedMessage:
 
 def generate_messages(registration: Registration, out_dir: str | Path,
                       recipient_actor: str = "EUDAMED") -> List[GeneratedMessage]:
-    """Emit the EUDAMED upload files, bundling 1:1 pairs and splitting N:1.
+    """Emit the EUDAMED upload files.
 
-    - Basic UDI-DI with exactly ONE UDI-DI -> device:Device bundle
-    - Basic UDI-DI with zero or several UDI-DIs -> device:BasicUDI (+ its
-      UDI-DIs as device:UDIDIData referencing it)
+    - Each Basic UDI-DI is registered once via a device:Device bundle with its
+      FIRST UDI-DI (DEVICE.POST).
+    - Its 2nd..Nth UDI-DIs go into a device:UDIDIData file (UDI_DI.POST),
+      uploaded after the device file is accepted.
+    A Basic UDI-DI with zero UDI-DIs cannot be registered on its own (VAL-011).
     """
     out_dir = Path(out_dir)
     sender = registration.basic_udis[0].manufacturer_srn if registration.basic_udis else "NA"
@@ -217,35 +217,27 @@ def generate_messages(registration: Registration, out_dir: str | Path,
     for d in registration.devices:
         by_basic.setdefault(d.basic_udi_di, []).append(d)
 
-    bundle_pairs: List[tuple[BasicUDI, Device]] = []
-    split_basics: List[BasicUDI] = []
-    split_devices: List[Device] = []
+    bundle_pairs: List[tuple[BasicUDI, Device]] = []   # basic + its first UDI-DI
+    extra_devices: List[Device] = []                    # 2nd..Nth UDI-DIs
     for b in registration.basic_udis:
         devs = by_basic.get(b.basic_udi_di, [])
-        if len(devs) == 1:
-            bundle_pairs.append((b, devs[0]))
-        else:
-            split_basics.append(b)
-            split_devices.extend(devs)
+        if not devs:
+            continue  # no UDI-DI -> nothing to register (warned by VAL-011)
+        bundle_pairs.append((b, devs[0]))
+        extra_devices.extend(devs[1:])
 
     messages: List[GeneratedMessage] = []
     if bundle_pairs:
         path = _write_message(
-            out_dir / "device_bundle_upload.xml", sender, recipient_actor, SERVICE_ID["device_bundle"],
+            out_dir / "1_device_upload.xml", sender, recipient_actor, SERVICE_ID["device"],
             lambda pl: [_add_bundle(pl, b, d) for b, d in bundle_pairs])
-        messages.append(GeneratedMessage("device_bundle", path, len(bundle_pairs), 1,
-                                         SERVICE_ID["device_bundle"]))
-    if split_basics:
-        path = _write_message(
-            out_dir / "1_basic_udi_upload.xml", sender, recipient_actor, SERVICE_ID["basic_udi"],
-            lambda pl: [_add_basic_udi(pl, b) for b in split_basics])
-        messages.append(GeneratedMessage("basic_udi", path, len(split_basics), 1,
-                                         SERVICE_ID["basic_udi"]))
-    if split_devices:
+        messages.append(GeneratedMessage("device", path, len(bundle_pairs), 1,
+                                         SERVICE_ID["device"]))
+    if extra_devices:
         path = _write_message(
             out_dir / "2_udi_di_upload.xml", sender, recipient_actor, SERVICE_ID["udi_di"],
-            lambda pl: [_add_udi_di(pl, d) for d in split_devices])
-        messages.append(GeneratedMessage("udi_di", path, len(split_devices), 2,
+            lambda pl: [_add_udi_di(pl, d) for d in extra_devices])
+        messages.append(GeneratedMessage("udi_di", path, len(extra_devices), 2,
                                          SERVICE_ID["udi_di"]))
     return messages
 
@@ -257,5 +249,5 @@ def generate_xml(registration: Registration, output_path: str | Path,
     index = registration.basic_udi_index()
     sender = registration.basic_udis[0].manufacturer_srn if registration.basic_udis else "NA"
     return _write_message(
-        Path(output_path), sender, recipient_actor, SERVICE_ID["device_bundle"],
+        Path(output_path), sender, recipient_actor, SERVICE_ID["device"],
         lambda pl: [_add_bundle(pl, index[d.basic_udi_di], d) for d in registration.devices])
