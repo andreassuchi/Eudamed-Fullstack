@@ -99,6 +99,13 @@ def test_generate_messages_splits_n_to_1_and_bundles_1_to_1(tmp_path, sample_dat
     assert roles["basic_udi"].entity_count == 1
     assert roles["udi_di"].entity_count == 2
     assert roles["basic_udi"].upload_order < roles["udi_di"].upload_order
+    # each file declares the EUDAMED service matching its payload (ERR-DTX-EUD-103.03-02)
+    assert roles["device_bundle"].service_id == "DEVICE"
+    assert roles["basic_udi"].service_id == "BASIC_UDI"
+    assert roles["udi_di"].service_id == "UDI_DI"
+    for m in messages:
+        root = etree.parse(str(m.path)).getroot()
+        assert root.findtext("m:recipient/m:service/s:serviceID", namespaces=NS) == m.service_id
     # every generated file validates against the official XSD
     for m in messages:
         assert validate_xml(m.path).status == "PASSED", (m.role, validate_xml(m.path).errors)

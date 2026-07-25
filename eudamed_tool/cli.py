@@ -53,8 +53,8 @@ def cmd_generate(args) -> int:
     for m in sorted(messages, key=lambda x: x.upload_order):
         xsd = validate_xml(m.path)
         all_passed = all_passed and xsd.status == "PASSED"
-        print(f"[upload #{m.upload_order}] {role_label.get(m.role, m.role)}: "
-              f"{m.path.name} ({m.entity_count}) - XSD {xsd.status}")
+        print(f"[upload #{m.upload_order}] {role_label.get(m.role, m.role)} "
+              f"(service {m.service_id}.POST): {m.path.name} ({m.entity_count}) - XSD {xsd.status}")
         for e in xsd.errors:
             print(f"    - {e}")
     write_manifest(out_dir, workbook, [m.path for m in messages], payload)
