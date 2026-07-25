@@ -43,3 +43,24 @@ def test_val_012_market_date_order(tmp_path, sample_data):
     sample_data["MarketCountries"][0]["withdrawal_date"] = "2023-01-01"
     report = validate(_load(tmp_path, sample_data))
     assert any(f.rule_code == "VAL-012" for f in report.errors)
+
+
+def test_val_015_software_id_without_software_special_device(tmp_path, sample_data):
+    # SOFTWARE_IDENTIFICATION but Basic UDI-DI is not a software special device
+    sample_data["ProductionIdentifiers"][0]["identifier_type"] = "SOFTWARE_IDENTIFICATION"
+    report = validate(_load(tmp_path, sample_data))
+    assert any(f.rule_code == "VAL-015" for f in report.errors)
+
+
+def test_val_015_software_special_device_without_software_id(tmp_path, sample_data):
+    # software special device but the UDI-DI lacks SOFTWARE_IDENTIFICATION
+    sample_data["BasicUDI"][0]["special_device"] = "MDR_SOFTWARE"
+    report = validate(_load(tmp_path, sample_data))
+    assert any(f.rule_code == "VAL-015" for f in report.errors)
+
+
+def test_val_015_consistent_software_passes(tmp_path, sample_data):
+    sample_data["BasicUDI"][0]["special_device"] = "MDR_SOFTWARE"
+    sample_data["ProductionIdentifiers"][0]["identifier_type"] = "SOFTWARE_IDENTIFICATION"
+    report = validate(_load(tmp_path, sample_data))
+    assert not any(f.rule_code == "VAL-015" for f in report.findings)

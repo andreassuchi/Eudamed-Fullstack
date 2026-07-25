@@ -13,6 +13,7 @@ from eudamed_tool.models import (
     DeviceType,
     IssuingEntityCode,
     RiskClass,
+    SpecialDeviceType,
 )
 from eudamed_tool.profile import get_profile
 from eudamed_tool.versions import DTX_SCHEMA_VERSION, EUDAMED_VERSION
@@ -42,6 +43,7 @@ templates.env.globals.update(
     issuing_entities=[e.value for e in IssuingEntityCode],
     risk_classes=[e.value for e in RiskClass],
     device_types=[e.value for e in DeviceType],
+    special_device_types=[e.value for e in SpecialDeviceType],
     device_statuses=[e.value for e in DeviceStatus],
     pi_types=[e.value for e in PROFILE.allowed_production_identifiers],
     languages=sorted(LANGUAGE_CODES),

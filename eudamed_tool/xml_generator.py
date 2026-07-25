@@ -89,6 +89,8 @@ def _fill_basic_udi(el, b: BasicUDI) -> None:
     # MDRBasicUDIType
     _el(el, "basicudi", "humanProductCheck", b.human_product_check)
     _el(el, "basicudi", "medicinalProductCheck", b.medicinal_product_check)
+    if b.special_device is not None:
+        _el(el, "basicudi", "specialDevice", b.special_device.value)
     _el(el, "basicudi", "type", b.device_type.value)
     # commondi:MDApplicablePropertiesGroup
     _el(el, "commondi", "active", b.active)

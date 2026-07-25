@@ -43,9 +43,20 @@
       </select>
     </label>
   </div>
-  <label>Model / device name *
-    <input name="model_name" required maxlength="255" value="{{ row.model_name if row else '' }}">
-  </label>
+  <div class="grid">
+    <label>Model / device name *
+      <input name="model_name" required maxlength="255" value="{{ row.model_name if row else '' }}">
+    </label>
+    <label>Special device type
+      <select name="special_device">
+        <option value="">— none —</option>
+        {% for v in special_device_types %}
+        <option value="{{ v }}" {% if row and row.special_device and row.special_device.value == v %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+      <small>Use a *_SOFTWARE value for software devices (requires SOFTWARE_IDENTIFICATION).</small>
+    </label>
+  </div>
   <fieldset>
     <legend>Applicable properties</legend>
     <div class="grid">
