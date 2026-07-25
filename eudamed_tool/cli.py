@@ -48,8 +48,8 @@ def cmd_generate(args) -> int:
         return 1
     messages = generate_messages(result.registration, out_dir)
     all_passed = True
-    role_label = {"device_bundle": "Device bundle (1:1)",
-                  "basic_udi": "Basic UDI-DI", "udi_di": "UDI-DI"}
+    role_label = {"device": "Device (Basic UDI-DI + first UDI-DI)",
+                  "udi_di": "Additional UDI-DI"}
     for m in sorted(messages, key=lambda x: x.upload_order):
         xsd = validate_xml(m.path)
         all_passed = all_passed and xsd.status == "PASSED"

@@ -19,9 +19,8 @@ from eudamed_tool.xml_generator import generate_messages
 from eudamed_tool.xsd_validator import validate_xml
 
 ROLE_LABELS = {
-    "device_bundle": "Device bundle (1:1)",
-    "basic_udi": "Basic UDI-DI",
-    "udi_di": "UDI-DI",
+    "device": "Device (Basic UDI-DI + first UDI-DI)",
+    "udi_di": "Additional UDI-DI",
 }
 
 

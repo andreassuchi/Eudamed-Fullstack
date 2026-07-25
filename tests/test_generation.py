@@ -59,8 +59,8 @@ def test_cli_generate_end_to_end(tmp_path, sample_workbook):
     out = tmp_path / "out"
     rc = main(["generate", str(sample_workbook), "--out", str(out)])
     assert rc == 0
-    # sample is a single 1:1 pair -> a Device bundle file
-    assert (out / "device_bundle_upload.xml").exists()
+    # sample is a single 1:1 pair -> one Device file (DEVICE.POST)
+    assert (out / "1_device_upload.xml").exists()
     assert (out / "manifest.json").exists()
 
 
@@ -87,32 +87,32 @@ def _multi_data(sample_data):
     return d
 
 
-def test_generate_messages_splits_n_to_1_and_bundles_1_to_1(tmp_path, sample_data):
+def test_generate_messages_device_then_additional_udi_di(tmp_path, sample_data):
     wb = build_workbook(tmp_path / "multi.xlsx", _multi_data(sample_data))
     reg = load_registration(wb).registration
     out = tmp_path / "out"
     messages = generate_messages(reg, out)
     roles = {m.role: m for m in messages}
-    # B-GS1-XYZ-0001-AB has 2 devices -> split; B-GS1-MON-0002 has 1 -> bundle
-    assert set(roles) == {"device_bundle", "basic_udi", "udi_di"}
-    assert roles["device_bundle"].entity_count == 1
-    assert roles["basic_udi"].entity_count == 1
-    assert roles["udi_di"].entity_count == 2
-    assert roles["basic_udi"].upload_order < roles["udi_di"].upload_order
+    # 2 Basic UDI-DIs -> device file has 2 bundles (each basic + its first UDI-DI);
+    # B-GS1-XYZ-0001-AB has a 2nd UDI-DI -> one additional UDI-DI
+    assert set(roles) == {"device", "udi_di"}
+    assert roles["device"].entity_count == 2
+    assert roles["udi_di"].entity_count == 1
+    assert roles["device"].upload_order < roles["udi_di"].upload_order
     # each file declares the EUDAMED service matching its payload (ERR-DTX-EUD-103.03-02)
-    assert roles["device_bundle"].service_id == "DEVICE"
-    assert roles["basic_udi"].service_id == "BASIC_UDI"
+    assert roles["device"].service_id == "DEVICE"
     assert roles["udi_di"].service_id == "UDI_DI"
     for m in messages:
         root = etree.parse(str(m.path)).getroot()
         assert root.findtext("m:recipient/m:service/s:serviceID", namespaces=NS) == m.service_id
-    # every generated file validates against the official XSD
-    for m in messages:
         assert validate_xml(m.path).status == "PASSED", (m.role, validate_xml(m.path).errors)
-    # no Basic UDI-DI appears as an entity more than once across the split files
-    basic_xml = etree.parse(str(roles["basic_udi"].path)).getroot()
-    codes = basic_xml.findall(".//basicudi:identifier/commondi:DICode", NS)
-    assert [c.text for c in codes] == ["B-GS1-XYZ-0001-AB"]
+    # each Basic UDI-DI appears exactly once, all in the device file; none in UDI-DI file
+    dev_root = etree.parse(str(roles["device"].path)).getroot()
+    basic_codes = [c.text for c in dev_root.findall(
+        ".//device:MDRBasicUDI/basicudi:identifier/commondi:DICode", NS)]
+    assert sorted(basic_codes) == ["B-GS1-MON-0002", "B-GS1-XYZ-0001-AB"]
+    udi_root = etree.parse(str(roles["udi_di"].path)).getroot()
+    assert udi_root.findall(".//device:MDRBasicUDI", NS) == []
 
 
 def test_cli_validate_ok(tmp_path, sample_workbook):
