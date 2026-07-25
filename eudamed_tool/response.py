@@ -38,6 +38,7 @@ class ParsedResponse:
     entities: List[ResponseEntity] = field(default_factory=list)
     creation_datetime: Optional[str] = None
     top_response_code: Optional[str] = None
+    service_id: Optional[str] = None  # DEVICE / UDI_DI / ... (from the envelope)
 
     @property
     def is_response(self) -> bool:
@@ -62,6 +63,8 @@ def parse_response(source: Union[bytes, str, Path]) -> ParsedResponse:
         ln = _localname(el)
         if ln == "creationDateTime" and el.text and result.creation_datetime is None:
             result.creation_datetime = el.text.strip()
+        elif ln == "serviceID" and el.text and result.service_id is None:
+            result.service_id = el.text.strip()
         elif ln == "responseEntity":
             code = rc = None
             messages: List[str] = []

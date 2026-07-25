@@ -13,16 +13,20 @@ BASIC_CODE = "B-GS1-XYZ-0001-AB"
 DEVICE_CODE = "04012345000012"
 
 
-def _ack(entities: list[tuple[str, str]]) -> bytes:
+def _ack(entities: list[tuple[str, str]], service: str = "") -> bytes:
     rows = "".join(
         f'<m:responseEntity><m:entityCode>{c}</m:entityCode>'
         f'<m:responseCode>{rc}</m:responseCode></m:responseEntity>'
         for c, rc in entities)
+    svc = (f'<m:recipient><m:service><s:serviceID>{service}</s:serviceID>'
+           f'<s:serviceOperation>POST</s:serviceOperation></m:service></m:recipient>'
+           if service else "")
     return (
         '<?xml version="1.0" encoding="UTF-8"?>'
-        '<m:Acknowledgement xmlns:m="https://ec.europa.eu/tools/eudamed/dtx/servicemodel/Message/v1" version="3.0.30">'
+        '<m:Acknowledgement xmlns:m="https://ec.europa.eu/tools/eudamed/dtx/servicemodel/Message/v1"'
+        ' xmlns:s="https://ec.europa.eu/tools/eudamed/dtx/servicemodel/Service/v1" version="3.0.30">'
         '<m:creationDateTime>2026-07-24T10:00:00Z</m:creationDateTime>'
-        f'<m:responseEntities>{rows}</m:responseEntities>'
+        f'{svc}<m:responseEntities>{rows}</m:responseEntities>'
         '</m:Acknowledgement>'
     ).encode("utf-8")
 
@@ -81,6 +85,19 @@ def test_error_response_flags_error(db_session, tmp_path):
     device = crud.find_device_by_udi(db_session, DEVICE_CODE)
     assert registration.sync_status(device, is_device=True) == registration.ERROR
     assert "EMDN code unknown" in device.upload_message
+
+
+def test_device_service_response_marks_bundled_udi_di(db_session, tmp_path):
+    # A DEVICE.POST response keys only by the Basic UDI-DI; the bundled first
+    # UDI-DI must be flagged registered too.
+    _load_sample(db_session, tmp_path)
+    report = registration.apply_response(
+        db_session, _ack([(BASIC_CODE, "SUCCESS")], service="DEVICE"))
+    assert report.succeeded == 1
+    basic = crud.find_basic_udi_by_code(db_session, BASIC_CODE)
+    device = crud.find_device_by_udi(db_session, DEVICE_CODE)
+    assert registration.sync_status(basic, is_device=False) == registration.IN_SYNC
+    assert registration.sync_status(device, is_device=True) == registration.IN_SYNC
 
 
 def test_unmatched_code_reported(db_session, tmp_path):
