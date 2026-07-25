@@ -95,6 +95,27 @@ def _parse_dt(value: Optional[str]) -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _mark(row, entity, uploaded_at, *, is_device: bool) -> None:
+    if entity.success:
+        row.upload_status = "UPLOADED"
+        row.uploaded_at = uploaded_at
+        row.upload_response_code = entity.response_code
+        row.upload_snapshot_hash = (
+            content_hash_device(row) if is_device else content_hash_basic(row))
+        row.upload_message = None
+    else:
+        row.upload_status = "ERROR"
+        row.upload_response_code = entity.response_code
+        row.upload_message = "; ".join(entity.messages) or None
+
+
+def _first_device_of(session: Session, basic) -> Optional[DeviceORM]:
+    """The UDI-DI bundled with the Basic UDI-DI in a DEVICE.POST (its first,
+    ordered as generate_messages does — by udi_di)."""
+    devices = crud.list_devices(session, basic.id)  # ordered by udi_di
+    return devices[0] if devices else None
+
+
 def apply_response(session: Session, data: bytes) -> ApplyReport:
     try:
         parsed = parse_response(data)
@@ -106,28 +127,41 @@ def apply_response(session: Session, data: bytes) -> ApplyReport:
                                  "(no responseEntity / responseCode elements found).")
 
     uploaded_at = _parse_dt(parsed.creation_datetime)
+    service = (parsed.service_id or "").upper()
     report = ApplyReport(parsed=parsed)
     for entity in parsed.entities:
         line = ResponseLine(entity.entity_code, entity.response_code, messages=entity.messages)
-        dev = crud.find_device_by_udi(session, entity.entity_code)
-        basic = None if dev else crud.find_basic_udi_by_code(session, entity.entity_code)
-        target = dev or basic
-        if target is None:
-            report.lines.append(line)
-            continue
-        line.matched = "device" if dev else "basic_udi"
-        line.name = entity.entity_code
-        if entity.success:
-            target.upload_status = "UPLOADED"
-            target.uploaded_at = uploaded_at
-            target.upload_response_code = entity.response_code
-            target.upload_snapshot_hash = (
-                content_hash_device(dev) if dev else content_hash_basic(basic))
-            target.upload_message = None
-        else:
-            target.upload_status = "ERROR"
-            target.upload_response_code = entity.response_code
-            target.upload_message = "; ".join(entity.messages) or None
+        code = entity.entity_code
+
+        # A DEVICE.POST response keys ONLY by the Basic UDI-DI; the bundled
+        # UDI-DI (its first) is registered together and must be flagged too.
+        if service == "DEVICE":
+            basic = crud.find_basic_udi_by_code(session, code)
+            if basic is not None:
+                line.matched, line.name = "basic_udi", code
+                _mark(basic, entity, uploaded_at, is_device=False)
+                first = _first_device_of(session, basic)
+                if first is not None:
+                    _mark(first, entity, uploaded_at, is_device=True)
+                report.lines.append(line)
+                continue
+        elif service == "UDI_DI":
+            dev = crud.find_device_by_udi(session, code)
+            if dev is not None:
+                line.matched, line.name = "device", code
+                _mark(dev, entity, uploaded_at, is_device=True)
+                report.lines.append(line)
+                continue
+
+        # fallback (unknown service): match device, then Basic UDI-DI
+        dev = crud.find_device_by_udi(session, code)
+        basic = None if dev else crud.find_basic_udi_by_code(session, code)
+        if dev is not None:
+            line.matched, line.name = "device", code
+            _mark(dev, entity, uploaded_at, is_device=True)
+        elif basic is not None:
+            line.matched, line.name = "basic_udi", code
+            _mark(basic, entity, uploaded_at, is_device=False)
         report.lines.append(line)
     session.commit()
     return report
