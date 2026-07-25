@@ -14,6 +14,7 @@ from .models import (
     DeviceType,
     IssuingEntityCode,
     RiskClass,
+    SpecialDeviceType,
 )
 from .profile import ALL_BASIC_FLAGS, DEVICE_FLAG_FIELDS, Profile, get_profile
 
@@ -32,6 +33,7 @@ def get_sheets(profile: Optional[Profile] = None) -> Dict[str, List[Column]]:
         ("risk_class", True, [e.value for e in RiskClass]),
         ("model_name", True, None),
         ("device_type", False, [e.value for e in DeviceType]),
+        ("special_device", False, [e.value for e in SpecialDeviceType]),
     ]
     basic += [(f, False, BOOL_VALUES) for f in ALL_BASIC_FLAGS
               if f in p.basic_editable_flags]

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_session
 from app.services import crud
-from app.web import form_bool, form_str, templates
+from app.web import form_bool, form_opt, form_str, templates
 from eudamed_tool.models import BasicUDI
 
 router = APIRouter(prefix="/basic-udis")
@@ -55,6 +55,7 @@ async def _model_from_form(request: Request) -> BasicUDI:
         "risk_class": form_str(form, "risk_class"),
         "model_name": form_str(form, "model_name"),
         "device_type": form_str(form, "device_type", "DEVICE"),
+        "special_device": form_opt(form, "special_device"),
     }
     data.update({f: form_bool(form, f) for f in BOOL_FIELDS})
     return BasicUDI(**data)

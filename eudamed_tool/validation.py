@@ -13,7 +13,7 @@ import enum
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional
 
-from .models import Device, Registration
+from .models import Device, ProductionIdentifierType, Registration
 from .udi import validate_di
 
 
@@ -186,6 +186,36 @@ def _build_rules() -> List[Rule]:
     add("VAL-014", "Basic UDI-DI check digit", "basic_udi_di", val_014,
         "Verify the Basic UDI-DI (GMN) check character pair with your issuing entity.",
         severity=Severity.WARNING)
+
+    # VAL-015: software specialDevice <-> SOFTWARE_IDENTIFICATION coupling.
+    # EUDAMED rule: a software specialDevice (e.g. MDR_SOFTWARE) requires the
+    # UDI-DI production identifier SOFTWARE_IDENTIFICATION, and vice versa.
+    def val_015(reg: Registration, rule: Rule):
+        findings = []
+        basics = reg.basic_udi_index()
+        sw_pi = ProductionIdentifierType.SOFTWARE_IDENTIFICATION
+        for d in reg.devices:
+            b = basics.get(d.basic_udi_di)
+            basic_is_software = bool(b and b.special_device and b.special_device.is_software)
+            has_sw_pi = sw_pi in d.production_identifiers
+            if has_sw_pi and not basic_is_software:
+                findings.append(Finding(
+                    rule.code, rule.severity, f"device:{d.udi_di}", rule.field_path,
+                    "uses production identifier SOFTWARE_IDENTIFICATION but its Basic UDI-DI "
+                    f"'{d.basic_udi_di}' is not a software special device",
+                    "Set the Basic UDI-DI special device to MDR_SOFTWARE, or remove "
+                    "SOFTWARE_IDENTIFICATION from the production identifiers."))
+            elif basic_is_software and not has_sw_pi:
+                findings.append(Finding(
+                    rule.code, rule.severity, f"device:{d.udi_di}", rule.field_path,
+                    f"Basic UDI-DI '{d.basic_udi_di}' is a software special device "
+                    "but this UDI-DI does not use SOFTWARE_IDENTIFICATION",
+                    "Add SOFTWARE_IDENTIFICATION to the production identifiers, or change "
+                    "the Basic UDI-DI special device."))
+        return findings
+    add("VAL-015", "Software specialDevice / production identifier match",
+        "device.production_identifiers", val_015,
+        "Align specialDevice (MDR_SOFTWARE) with the SOFTWARE_IDENTIFICATION production identifier.")
 
     return rules
 

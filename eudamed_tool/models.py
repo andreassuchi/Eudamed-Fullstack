@@ -51,6 +51,37 @@ class DeviceStatus(str, enum.Enum):
     NO_LONGER_PLACED_ON_THE_MARKET = "NO_LONGER_PLACED_ON_THE_MARKET"
 
 
+class SpecialDeviceType(str, enum.Enum):
+    """basicudi:MDRSpecialDeviceTypeEnum (special device types under MDR/MDD/AIMDD)."""
+    MDR_SOFTWARE = "MDR_SOFTWARE"
+    MDR_STANDARD_SOFT_CONTACT_LENSES = "MDR_STANDARD_SOFT_CONTACT_LENSES"
+    MDR_RIGID_GAS_PERMEABLE = "MDR_RIGID_GAS_PERMEABLE"
+    MDR_MADE_TO_ORDER = "MDR_MADE_TO_ORDER"
+    MDR_SPECTACLES_FRAMES = "MDR_SPECTACLES_FRAMES"
+    MDR_SPECTACLES_LENSES = "MDR_SPECTACLES_LENSES"
+    MDR_READY_MADE_SPECTACLES = "MDR_READY_MADE_SPECTACLES"
+    MDR_ORTHOPEDIC = "MDR_ORTHOPEDIC"
+    MDR_MADE_TO_ORDER_RIGID_GAS_PERMEABLE = "MDR_MADE_TO_ORDER_RIGID_GAS_PERMEABLE"
+    MDD_SOFTWARE = "MDD_SOFTWARE"
+    MDD_STANDARD_SOFT_CONTACT_LENSES = "MDD_STANDARD_SOFT_CONTACT_LENSES"
+    MDD_RIGID_GAS_PERMEABLE = "MDD_RIGID_GAS_PERMEABLE"
+    MDD_MADE_TO_ORDER = "MDD_MADE_TO_ORDER"
+    MDD_SPECTACLES_FRAMES = "MDD_SPECTACLES_FRAMES"
+    MDD_SPECTACLES_LENSES = "MDD_SPECTACLES_LENSES"
+    MDD_READY_MADE_SPECTACLES = "MDD_READY_MADE_SPECTACLES"
+    MDD_ORTHOPEDIC = "MDD_ORTHOPEDIC"
+    AIMDD_SOFTWARE = "AIMDD_SOFTWARE"
+    AIMDD_ORTHOPEDIC = "AIMDD_ORTHOPEDIC"
+
+    @property
+    def is_software(self) -> bool:
+        return self.value.endswith("_SOFTWARE")
+
+
+# specialDevice values that require SOFTWARE_IDENTIFICATION as production identifier
+SOFTWARE_SPECIAL_DEVICES = {s for s in SpecialDeviceType if s.is_software}
+
+
 class ProductionIdentifierType(str, enum.Enum):
     """udidi:PIElementEnum"""
     BATCH_NUMBER = "BATCH_NUMBER"
@@ -96,6 +127,7 @@ class BasicUDI(StrictModel):
     risk_class: RiskClass
     model_name: str = Field(min_length=1, max_length=250)
     device_type: DeviceType = DeviceType.DEVICE
+    special_device: Optional[SpecialDeviceType] = None  # e.g. MDR_SOFTWARE
     animal_tissues_cells: bool = False
     human_tissues_cells: bool = False
     human_product_check: bool = False

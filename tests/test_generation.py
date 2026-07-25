@@ -34,6 +34,17 @@ def test_generated_xml_passes_official_xsd(tmp_path, sample_workbook):
     assert result.status == "PASSED", result.errors
 
 
+def test_special_device_emitted_and_valid(tmp_path, sample_data):
+    sample_data["BasicUDI"][0]["special_device"] = "MDR_SOFTWARE"
+    sample_data["ProductionIdentifiers"][0]["identifier_type"] = "SOFTWARE_IDENTIFICATION"
+    wb = build_workbook(tmp_path / "sw.xlsx", sample_data)
+    reg = load_registration(wb).registration
+    xml_path = generate_xml(reg, tmp_path / "out.xml")
+    root = etree.parse(str(xml_path)).getroot()
+    assert root.findtext(".//basicudi:specialDevice", namespaces=NS) == "MDR_SOFTWARE"
+    assert validate_xml(xml_path).status == "PASSED", validate_xml(xml_path).errors
+
+
 def test_cli_generate_blocked_on_errors(tmp_path, sample_data):
     sample_data["EMDN"] = []  # triggers VAL-006
     wb = build_workbook(tmp_path / "bad.xlsx", sample_data)
