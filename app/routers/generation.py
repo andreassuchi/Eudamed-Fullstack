@@ -38,10 +38,17 @@ def generate_now(request: Request, session: Session = Depends(get_session)):
                                       {"job": job, "run": latest_run(session)})
 
 
-@router.get("/jobs/{job_id}/download")
-def download_xml(job_id: uuid.UUID, session: Session = Depends(get_session)):
+@router.get("/jobs/{job_id}/download/{filename}")
+def download_xml(job_id: uuid.UUID, filename: str,
+                 session: Session = Depends(get_session)):
     job = get_job(session, job_id)
-    if job is None or not job.xml_path or not Path(job.xml_path).exists():
-        raise HTTPException(404, "XML not available for this job")
-    return FileResponse(job.xml_path, media_type="application/xml",
-                        filename="device_upload.xml")
+    if job is None or not job.output_dir or not job.files:
+        raise HTTPException(404, "No files for this job")
+    # only serve filenames recorded on the job (guards against path traversal)
+    known = {f["filename"] for f in job.files}
+    if filename not in known:
+        raise HTTPException(404, "Unknown file for this job")
+    path = Path(job.output_dir) / filename
+    if not path.exists():
+        raise HTTPException(404, "File no longer available on disk")
+    return FileResponse(path, media_type="application/xml", filename=filename)

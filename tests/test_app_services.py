@@ -86,7 +86,24 @@ def test_generation_blocked_then_ready(db_session, tmp_path, monkeypatch):
     job = run_generation(db_session)
     assert job.status == "READY_FOR_UPLOAD", (job.xsd_status, job.xsd_errors)
     assert job.xsd_status == "PASSED"
-    assert Path(job.xml_path).exists() and job.xml_sha256
+    # single 1:1 pair -> one Device bundle file, present on disk
+    assert job.files and len(job.files) == 1 and job.files[0]["role"] == "device_bundle"
+    assert (Path(job.output_dir) / job.files[0]["filename"]).exists()
+
+
+def test_generation_splits_multiple_udi_per_basic(db_session, tmp_path, monkeypatch):
+    from app.config import settings
+    monkeypatch.setattr(settings, "output_dir", tmp_path)
+    crud.save_basic_udi(db_session, _demo_basic())
+    crud.save_device(db_session, _demo_device())
+    crud.save_device(db_session, _demo_device(udi_di="04012345000029", reference_number="REF-2"))
+    job = run_generation(db_session)
+    assert job.status == "READY_FOR_UPLOAD", (job.xsd_status, job.xsd_errors)
+    roles = {f["role"]: f for f in job.files}
+    assert set(roles) == {"basic_udi", "udi_di"}  # 2 UDI-DIs -> split, no bundle
+    assert roles["basic_udi"]["entity_count"] == 1
+    assert roles["udi_di"]["entity_count"] == 2
+    assert roles["basic_udi"]["upload_order"] < roles["udi_di"]["upload_order"]
 
 
 def test_excel_import_preview_and_commit(db_session, tmp_path):
