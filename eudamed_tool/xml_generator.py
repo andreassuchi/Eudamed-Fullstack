@@ -166,7 +166,16 @@ def _add_udi_di(payload, d: Device) -> None:
 
 # --- message envelope --------------------------------------------------------
 
-def _write_message(path: Path, sender_srn: str, recipient_actor: str,
+# The message service must match the payload entity type, otherwise EUDAMED
+# rejects with ERR-DTX-EUD-103.03-02 ("XML does not match selected service").
+SERVICE_ID = {
+    "device_bundle": "DEVICE",
+    "basic_udi": "BASIC_UDI",
+    "udi_di": "UDI_DI",
+}
+
+
+def _write_message(path: Path, sender_srn: str, recipient_actor: str, service_id: str,
                    fill_payload: Callable[[etree._Element], None]) -> Path:
     root = etree.Element(q("m", "Push"), nsmap=NS)
     root.set("version", XSD_VERSION)
@@ -174,10 +183,10 @@ def _write_message(path: Path, sender_srn: str, recipient_actor: str,
     _el(root, "m", "creationDateTime",
         datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
     _el(root, "m", "messageID", str(uuid.uuid4()))
-    _endpoint(root, "recipient", recipient_actor, "DEVICE")
+    _endpoint(root, "recipient", recipient_actor, service_id)
     payload = _el(root, "m", "payload")
     fill_payload(payload)
-    _endpoint(root, "sender", sender_srn, "DEVICE")
+    _endpoint(root, "sender", sender_srn, service_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     etree.ElementTree(root).write(str(path), encoding="UTF-8",
                                   xml_declaration=True, pretty_print=True)
@@ -190,6 +199,7 @@ class GeneratedMessage:
     path: Path
     entity_count: int
     upload_order: int  # 1 = upload first; files with the same order are independent
+    service_id: str = "DEVICE"  # EUDAMED service to select for this file
 
 
 def generate_messages(registration: Registration, out_dir: str | Path,
@@ -221,19 +231,22 @@ def generate_messages(registration: Registration, out_dir: str | Path,
     messages: List[GeneratedMessage] = []
     if bundle_pairs:
         path = _write_message(
-            out_dir / "device_bundle_upload.xml", sender, recipient_actor,
+            out_dir / "device_bundle_upload.xml", sender, recipient_actor, SERVICE_ID["device_bundle"],
             lambda pl: [_add_bundle(pl, b, d) for b, d in bundle_pairs])
-        messages.append(GeneratedMessage("device_bundle", path, len(bundle_pairs), 1))
+        messages.append(GeneratedMessage("device_bundle", path, len(bundle_pairs), 1,
+                                         SERVICE_ID["device_bundle"]))
     if split_basics:
         path = _write_message(
-            out_dir / "1_basic_udi_upload.xml", sender, recipient_actor,
+            out_dir / "1_basic_udi_upload.xml", sender, recipient_actor, SERVICE_ID["basic_udi"],
             lambda pl: [_add_basic_udi(pl, b) for b in split_basics])
-        messages.append(GeneratedMessage("basic_udi", path, len(split_basics), 1))
+        messages.append(GeneratedMessage("basic_udi", path, len(split_basics), 1,
+                                         SERVICE_ID["basic_udi"]))
     if split_devices:
         path = _write_message(
-            out_dir / "2_udi_di_upload.xml", sender, recipient_actor,
+            out_dir / "2_udi_di_upload.xml", sender, recipient_actor, SERVICE_ID["udi_di"],
             lambda pl: [_add_udi_di(pl, d) for d in split_devices])
-        messages.append(GeneratedMessage("udi_di", path, len(split_devices), 2))
+        messages.append(GeneratedMessage("udi_di", path, len(split_devices), 2,
+                                         SERVICE_ID["udi_di"]))
     return messages
 
 
@@ -244,5 +257,5 @@ def generate_xml(registration: Registration, output_path: str | Path,
     index = registration.basic_udi_index()
     sender = registration.basic_udis[0].manufacturer_srn if registration.basic_udis else "NA"
     return _write_message(
-        Path(output_path), sender, recipient_actor,
+        Path(output_path), sender, recipient_actor, SERVICE_ID["device_bundle"],
         lambda pl: [_add_bundle(pl, index[d.basic_udi_di], d) for d in registration.devices])

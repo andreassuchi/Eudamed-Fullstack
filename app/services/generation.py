@@ -61,6 +61,7 @@ def run_generation(session: Session,
             "filename": m.path.name,
             "entity_count": m.entity_count,
             "upload_order": m.upload_order,
+            "service_id": m.service_id,
             "sha256": sha256_file(m.path),
             "xsd_status": xsd.status,
         })
