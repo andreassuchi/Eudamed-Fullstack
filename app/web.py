@@ -9,6 +9,7 @@ from app.config import settings
 from eudamed_tool.models import (
     EU_MARKET_COUNTRIES,
     LANGUAGE_CODES,
+    ApplicableLegislation,
     DeviceStatus,
     DeviceType,
     IssuingEntityCode,
@@ -43,6 +44,7 @@ templates.env.globals.update(
     issuing_entities=[e.value for e in IssuingEntityCode],
     risk_classes=[e.value for e in RiskClass],
     device_types=[e.value for e in DeviceType],
+    applicable_legislations=[e.value for e in ApplicableLegislation],
     special_device_types=[e.value for e in SpecialDeviceType],
     device_statuses=[e.value for e in DeviceStatus],
     pi_types=[e.value for e in PROFILE.allowed_production_identifiers],

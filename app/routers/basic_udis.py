@@ -55,6 +55,7 @@ async def _model_from_form(request: Request) -> BasicUDI:
         "risk_class": form_str(form, "risk_class"),
         "model_name": form_str(form, "model_name"),
         "device_type": form_str(form, "device_type", "DEVICE"),
+        "applicable_legislation": form_str(form, "applicable_legislation", "MDR"),
         "special_device": form_opt(form, "special_device"),
     }
     data.update({f: form_bool(form, f) for f in BOOL_FIELDS})

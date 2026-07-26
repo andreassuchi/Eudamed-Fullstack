@@ -31,9 +31,10 @@ from eudamed_tool.profile import get_profile
 
 BASIC_UDI_FIELDS = [
     "basic_udi_di", "issuing_entity_code", "manufacturer_srn", "risk_class",
-    "model_name", "device_type", "special_device", "animal_tissues_cells",
-    "human_tissues_cells", "human_product_check", "medicinal_product_check",
-    "administering_medicine", "active", "implantable", "measuring_function", "reusable",
+    "model_name", "device_type", "applicable_legislation", "special_device",
+    "animal_tissues_cells", "human_tissues_cells", "human_product_check",
+    "medicinal_product_check", "administering_medicine", "active", "implantable",
+    "measuring_function", "reusable",
 ]
 
 DEVICE_SCALAR_FIELDS = [

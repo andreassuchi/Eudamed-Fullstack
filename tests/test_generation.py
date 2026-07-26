@@ -115,6 +115,23 @@ def test_generate_messages_device_then_additional_udi_di(tmp_path, sample_data):
     assert udi_root.findall(".//device:MDRBasicUDI", NS) == []
 
 
+def test_legacy_device_generates_mdeudevice(tmp_path, sample_data):
+    # a legacy (MDD) Basic UDI-DI is submitted as device:Device / MDEUDeviceType
+    sample_data["BasicUDI"][0]["applicable_legislation"] = "MDD"
+    wb = build_workbook(tmp_path / "legacy.xlsx", sample_data)
+    reg = load_registration(wb).registration
+    out = tmp_path / "out"
+    messages = generate_messages(reg, out)
+    dev_msg = next(m for m in messages if m.role == "device")
+    root = etree.parse(str(dev_msg.path)).getroot()
+    dev = root.find("m:payload/device:Device", NS)
+    assert dev.get(f"{{{NS['xsi']}}}type") == "device:MDEUDeviceType"
+    assert [etree.QName(c).localname for c in dev] == ["MDEUData", "MDEUDI"]
+    assert dev.findtext(".//eudi:applicableLegislation", namespaces=NS) == "MDD"
+    for m in messages:
+        assert validate_xml(m.path).status == "PASSED", (m.role, validate_xml(m.path).errors)
+
+
 def test_cli_validate_ok(tmp_path, sample_workbook):
     out = tmp_path / "out"
     rc = main(["validate", str(sample_workbook), "--out", str(out)])

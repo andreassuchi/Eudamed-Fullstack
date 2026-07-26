@@ -35,6 +35,7 @@ UUID_T = Uuid(as_uuid=True)
 JSON_T = JSON().with_variant(JSONB(), "postgresql")
 
 from eudamed_tool.models import (
+    ApplicableLegislation,
     DeviceStatus,
     DeviceType,
     IssuingEntityCode,
@@ -82,6 +83,9 @@ class BasicUDIORM(TimestampMixin, UploadStatusMixin, Base):
     model_name: Mapped[str] = mapped_column(String(255))
     device_type: Mapped[DeviceType] = mapped_column(
         _enum(DeviceType, "device_type_enum"), default=DeviceType.DEVICE)
+    applicable_legislation: Mapped[ApplicableLegislation] = mapped_column(
+        _enum(ApplicableLegislation, "applicable_legislation_enum"),
+        default=ApplicableLegislation.MDR)
     special_device: Mapped[Optional[SpecialDeviceType]] = mapped_column(
         _enum(SpecialDeviceType, "special_device_type_enum"))
     animal_tissues_cells: Mapped[bool] = mapped_column(Boolean, default=False)
