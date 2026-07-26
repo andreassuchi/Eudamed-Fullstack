@@ -44,6 +44,8 @@ NS = {
     "commondi": "https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Device/CommonDevice/v1",
     "marketinfo": "https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/MktInfo/MarketInfo/v1",
     "lsn": "https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Common/LanguageSpecific/v1",
+    "eudi": "https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Device/LegacyDevice/EUDI/v1",
+    "eudididata": "https://ec.europa.eu/tools/eudamed/dtx/datamodel/Entity/Device/LegacyDevice/EUDIData/v1",
     "xsi": "http://www.w3.org/2001/XMLSchema-instance",
 }
 
@@ -152,14 +154,23 @@ def _fill_udi_di(el, d: Device) -> None:
 
 def _add_bundle(payload, b: BasicUDI, d: Device) -> None:
     dev = _el(payload, "device", "Device")
-    dev.set(q("xsi", "type"), "device:MDRDeviceType")
-    _fill_basic_udi(_el(dev, "device", "MDRBasicUDI"), b)
-    _fill_udi_di(_el(dev, "device", "MDRUDIDIData"), d)
+    if b.is_legacy:
+        # MDEUDeviceType: MDEUData THEN MDEUDI (order per DI.xsd); MDEUDI adds
+        # applicableLegislation after the MDRBasicUDIType content.
+        dev.set(q("xsi", "type"), "device:MDEUDeviceType")
+        _fill_udi_di(_el(dev, "device", "MDEUData"), d)
+        mdeudi = _el(dev, "device", "MDEUDI")
+        _fill_basic_udi(mdeudi, b)
+        _el(mdeudi, "eudi", "applicableLegislation", b.applicable_legislation.value)
+    else:
+        dev.set(q("xsi", "type"), "device:MDRDeviceType")
+        _fill_basic_udi(_el(dev, "device", "MDRBasicUDI"), b)
+        _fill_udi_di(_el(dev, "device", "MDRUDIDIData"), d)
 
 
-def _add_udi_di(payload, d: Device) -> None:
+def _add_udi_di(payload, d: Device, *, legacy: bool = False) -> None:
     el = _el(payload, "device", "UDIDIData")
-    el.set(q("xsi", "type"), "device:MDRUDIDIDataType")
+    el.set(q("xsi", "type"), "eudididata:MDEUDataType" if legacy else "device:MDRUDIDIDataType")
     _fill_udi_di(el, d)
 
 
@@ -213,6 +224,7 @@ def generate_messages(registration: Registration, out_dir: str | Path,
     out_dir = Path(out_dir)
     sender = registration.basic_udis[0].manufacturer_srn if registration.basic_udis else "NA"
 
+    index = registration.basic_udi_index()
     by_basic: dict[str, List[Device]] = {}
     for d in registration.devices:
         by_basic.setdefault(d.basic_udi_di, []).append(d)
@@ -226,6 +238,10 @@ def generate_messages(registration: Registration, out_dir: str | Path,
         bundle_pairs.append((b, devs[0]))
         extra_devices.extend(devs[1:])
 
+    def _is_legacy(d: Device) -> bool:
+        b = index.get(d.basic_udi_di)
+        return bool(b and b.is_legacy)
+
     messages: List[GeneratedMessage] = []
     if bundle_pairs:
         path = _write_message(
@@ -236,7 +252,7 @@ def generate_messages(registration: Registration, out_dir: str | Path,
     if extra_devices:
         path = _write_message(
             out_dir / "2_udi_di_upload.xml", sender, recipient_actor, SERVICE_ID["udi_di"],
-            lambda pl: [_add_udi_di(pl, d) for d in extra_devices])
+            lambda pl: [_add_udi_di(pl, d, legacy=_is_legacy(d)) for d in extra_devices])
         messages.append(GeneratedMessage("udi_di", path, len(extra_devices), 2,
                                          SERVICE_ID["udi_di"]))
     return messages

@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Tuple
 
 from .models import (
+    ApplicableLegislation,
     DeviceStatus,
     DeviceType,
     IssuingEntityCode,
@@ -33,6 +34,7 @@ def get_sheets(profile: Optional[Profile] = None) -> Dict[str, List[Column]]:
         ("risk_class", True, [e.value for e in RiskClass]),
         ("model_name", True, None),
         ("device_type", False, [e.value for e in DeviceType]),
+        ("applicable_legislation", False, [e.value for e in ApplicableLegislation]),
         ("special_device", False, [e.value for e in SpecialDeviceType]),
     ]
     basic += [(f, False, BOOL_VALUES) for f in ALL_BASIC_FLAGS

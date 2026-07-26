@@ -45,6 +45,18 @@ class DeviceType(str, enum.Enum):
     PROCEDURE_PACK = "PROCEDURE_PACK"
 
 
+class ApplicableLegislation(str, enum.Enum):
+    """Regulation (MDR) vs legacy directive devices. MDD/AIMDD are legacy and
+    map to eudi:MDEUDIType.applicableLegislation (eudi:MDDApplicableLegislationEnum)."""
+    MDR = "MDR"
+    MDD = "MDD"
+    AIMDD = "AIMDD"
+
+    @property
+    def is_legacy(self) -> bool:
+        return self is not ApplicableLegislation.MDR
+
+
 class DeviceStatus(str, enum.Enum):
     ON_THE_MARKET = "ON_THE_MARKET"
     NOT_INTENDED_FOR_EU_MARKET = "NOT_INTENDED_FOR_EU_MARKET"
@@ -127,6 +139,8 @@ class BasicUDI(StrictModel):
     risk_class: RiskClass
     model_name: str = Field(min_length=1, max_length=250)
     device_type: DeviceType = DeviceType.DEVICE
+    # MDR = regulation device; MDD/AIMDD = legacy device (submitted as MDEUDevice)
+    applicable_legislation: ApplicableLegislation = ApplicableLegislation.MDR
     special_device: Optional[SpecialDeviceType] = None  # e.g. MDR_SOFTWARE
     animal_tissues_cells: bool = False
     human_tissues_cells: bool = False
@@ -137,6 +151,10 @@ class BasicUDI(StrictModel):
     implantable: bool = False
     measuring_function: bool = False
     reusable: bool = False
+
+    @property
+    def is_legacy(self) -> bool:
+        return self.applicable_legislation.is_legacy
 
 
 class TradeName(StrictModel):

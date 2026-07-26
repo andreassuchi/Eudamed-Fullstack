@@ -42,6 +42,14 @@
         {% endfor %}
       </select>
     </label>
+    <label>Applicable legislation *
+      <select name="applicable_legislation">
+        {% for v in applicable_legislations %}
+        <option value="{{ v }}" {% if row and row.applicable_legislation.value == v %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+      </select>
+      <small>MDD/AIMDD = legacy device (submitted as MDEUDevice).</small>
+    </label>
   </div>
   <div class="grid">
     <label>Model / device name *
