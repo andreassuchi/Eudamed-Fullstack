@@ -2,6 +2,9 @@
 {% block title %}{{ row.basic_udi_di if row else "New Basic UDI-DI" }}{% endblock %}
 {% block content %}
 <h2>{{ "Edit" if row else "New" }} Basic UDI-DI</h2>
+<p><small>Applicable legislation MDD/AIMDD marks a legacy device (submitted as
+   MDEUDevice). Special device type: use a *_SOFTWARE value for software devices
+   (requires the SOFTWARE_IDENTIFICATION production identifier).</small></p>
 {% for e in errors %}<article class="alert-error"><small>{{ e }}</small></article>{% endfor %}
 <form method="post" action="{{ '/basic-udis/' + (row.id | string) if row else '/basic-udis/new' }}">
   <div class="grid">
@@ -48,7 +51,6 @@
         <option value="{{ v }}" {% if row and row.applicable_legislation.value == v %}selected{% endif %}>{{ v }}</option>
         {% endfor %}
       </select>
-      <small>MDD/AIMDD = legacy device (submitted as MDEUDevice).</small>
     </label>
   </div>
   <div class="grid">
@@ -62,7 +64,6 @@
         <option value="{{ v }}" {% if row and row.special_device and row.special_device.value == v %}selected{% endif %}>{{ v }}</option>
         {% endfor %}
       </select>
-      <small>Use a *_SOFTWARE value for software devices (requires SOFTWARE_IDENTIFICATION).</small>
     </label>
   </div>
   <fieldset>
