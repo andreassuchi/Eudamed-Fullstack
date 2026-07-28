@@ -1,200 +1,158 @@
-# Deploying EUDAMED Upload to a VPS (Debian 13, public HTTPS)
+# Deploying EUDAMED Upload on a subdomain (existing VPS: Docker + host nginx + certbot)
 
-Step-by-step runbook for an IONOS (or any) VPS: **Debian 13 ("Trixie")**, a
-non-root user **with `sudo`**, reached as a **public HTTPS site behind a login**.
-The app never talks to EUDAMED directly — it generates XML you upload manually —
-so the only thing exposed is the web UI, protected by TLS + basic-auth.
+Runbook for a VPS that is **already set up**: Docker is running, host **nginx**
+(systemd) serves a static site, and **certbot** manages Let's Encrypt certs. We
+add the EUDAMED tool as a **new subdomain** without touching the existing site.
 
 ```
-Internet ──443/80──▶ Caddy (TLS + login) ──▶ app :8000 ──▶ Postgres  (all internal)
+Internet ─443─▶ host nginx (TLS + login) ──proxy──▶ 127.0.0.1:8090 ─▶ app container ─▶ Postgres (internal)
+                 (already running)                     (new)            (new)           (new)
 ```
 
-Everything runs from the repo via Docker Compose using two files:
-`docker-compose.yml` (base) + `docker-compose.prod.yml` (this production overlay,
-which removes the public app/DB ports and adds the Caddy proxy).
+The app container listens on **127.0.0.1 only** — it is never exposed directly.
+nginx terminates TLS (certbot) and adds the login, exactly like your static site.
+
+SSH note: this VPS uses **port 2222**, so connect with `ssh -p 2222 user@host`.
 
 ---
 
-## 0. Before you start — you need
+## 0. Pick a subdomain and add DNS
 
-- The **VPS public IP** and SSH access as your sudo user (root SSH disabled is fine).
-- A **domain or subdomain** you control, e.g. `eudamed.yourcompany.com`.
-- A **DNS A record** for that name pointing at the VPS IP. Create it now (at your
-  DNS provider) so it has time to propagate:
-  ```
-  eudamed.yourcompany.com.   A   <VPS-PUBLIC-IP>
-  ```
-  Verify from your laptop before continuing:
-  ```
-  nslookup eudamed.yourcompany.com
-  ```
-- A **GitHub Personal Access Token (PAT)** or **deploy key** — the repo is private,
-  so cloning needs credentials (Step 5).
-
-All commands below run **on the VPS** unless stated otherwise.
-
----
-
-## 1. First login and system update
+Choose e.g. `eudamed.yourdomain.com`. Add a DNS **A record** → the VPS public IP
+(a CNAME to the existing site's host also works). Verify from your laptop:
 
 ```bash
-ssh youruser@<VPS-PUBLIC-IP>
-sudo apt update && sudo apt full-upgrade -y
-sudo apt install -y git ufw curl ca-certificates
+nslookup eudamed.yourdomain.com      # must resolve to the VPS IP before certbot
 ```
 
-## 2. Firewall — allow only SSH + web
+## 1. Clone the repository
 
 ```bash
-sudo ufw allow OpenSSH
-sudo ufw allow 80/tcp     # Let's Encrypt HTTP challenge + redirect to HTTPS
-sudo ufw allow 443/tcp    # the app
-sudo ufw enable
-sudo ufw status
-```
-The database and the app's own port are **never** opened — only Caddy is public.
-
-## 3. Install Docker Engine + Compose plugin (official repo)
-
-Do **not** use `apt install docker.io` (it lags). Use Docker's repo:
-
-```bash
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/debian/gpg \
-  | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-https://download.docker.com/linux/debian $(. /etc/os-release && echo $VERSION_CODENAME) stable" \
-  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-```
-
-Let your user run Docker without `sudo`, then re-login so the group applies:
-
-```bash
-sudo usermod -aG docker $USER
-exit
-# ssh back in:
-ssh youruser@<VPS-PUBLIC-IP>
-docker run --rm hello-world     # sanity check
-```
-
-## 4. Clone the repository
-
-Using a PAT (paste the token as the password when prompted, username = your GitHub user):
-
-```bash
+ssh -p 2222 youruser@<VPS-IP>
 mkdir -p ~/apps && cd ~/apps
 git clone https://github.com/andreassuchi/Eudamed-Fullstack.git
 cd Eudamed-Fullstack
 ```
-(Or set up an SSH deploy key if you prefer key-based pulls.)
+(Private repo → use a GitHub PAT as the password, or an SSH deploy key.)
 
-## 5. Create the production environment file
+## 2. Production environment file
 
 ```bash
 cp .env.prod.example .env.prod
-```
-
-Generate the two secrets and edit the file:
-
-```bash
-# a strong DB password:
-openssl rand -base64 24
-
-# a bcrypt hash for the web login (choose your own password):
-docker run --rm caddy:2 caddy hash-password --plaintext 'choose-a-strong-password'
-```
-
-```bash
+openssl rand -base64 24          # copy this as the DB password
 nano .env.prod
 ```
-Set:
-- `EUDAMED_DOMAIN` = your domain (must match the DNS A record exactly)
-- `ACME_EMAIL`     = your e-mail (Let's Encrypt expiry notices)
-- `BASIC_AUTH_USER` = a login name; `BASIC_AUTH_HASH` = the `$2a$...` hash from above
-- `POSTGRES_PASSWORD` = the random password from above
-- leave `POSTGRES_USER`, `POSTGRES_DB`, `EUDAMED_PROFILE` as-is unless you have a reason
+Set `POSTGRES_PASSWORD` to the random value. Leave `APP_PORT=8090` unless that
+port is already used on the host — check with `sudo ss -tlnp | grep 8090` (no
+output = free). `.env.prod` is git-ignored and stays only on the server.
 
-`.env.prod` is git-ignored — it stays only on the server.
-
-## 6. Bring the stack up
+## 3. Start the containers (localhost-only)
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d --build
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
 ```
-On first start Docker builds the app image, Postgres initialises its volume, the
-app runs Alembic migrations automatically, and Caddy requests the TLS certificate.
+This builds the app image, initialises Postgres, runs Alembic migrations
+automatically, and publishes the app on **127.0.0.1:8090** only.
 
-Watch it come up:
+Verify it's up and *not* public:
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f
+curl -sI http://127.0.0.1:8090/ | head -n1     # expect HTTP/1.1 200
+sudo ss -tlnp | grep 8090                        # should show 127.0.0.1:8090, NOT 0.0.0.0
+docker compose -f docker-compose.prod.yml ps      # containers running/healthy
 ```
-Look for Caddy "certificate obtained successfully" and uvicorn "Application startup
-complete". `Ctrl-C` stops following (containers keep running).
 
-## 7. Verify
+## 4. Create the login (HTTP basic-auth)
 
-From your laptop, open **https://eudamed.yourcompany.com** — you should get a
-browser login prompt (your basic-auth user), then the dashboard, on a valid
-padlock. Certificate issuance can take up to a minute on first load.
-
-Quick checks on the server:
+The app has no login of its own, so nginx enforces one:
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml ps      # all "running"/"healthy"
-curl -sI https://eudamed.yourcompany.com | head -n1                      # HTTP/2 200/401
+sudo apt install -y apache2-utils
+sudo htpasswd -c /etc/nginx/.htpasswd-eudamed team      # prompts for a password
+# add more users later WITHOUT -c:  sudo htpasswd /etc/nginx/.htpasswd-eudamed alice
+```
+
+## 5. Add the nginx server block
+
+Copy the template from the repo and set your real subdomain:
+```bash
+sudo cp deploy/nginx-eudamed.conf /etc/nginx/sites-available/eudamed
+sudo sed -i 's/eudamed.example.com/eudamed.yourdomain.com/' /etc/nginx/sites-available/eudamed
+sudo ln -s /etc/nginx/sites-available/eudamed /etc/nginx/sites-enabled/eudamed
+sudo nginx -t          # syntax OK?
+sudo systemctl reload nginx
+```
+If `APP_PORT` isn't 8090, also edit the `proxy_pass` line to match.
+
+> If your nginx uses `conf.d/` instead of `sites-available`/`sites-enabled`
+> (no symlink pattern), copy the file to `/etc/nginx/conf.d/eudamed.conf` instead.
+
+## 6. Get the TLS certificate
+
+certbot's nginx plugin issues the cert and rewrites the block to add HTTPS +
+an HTTP→HTTPS redirect:
+```bash
+sudo certbot --nginx -d eudamed.yourdomain.com
+```
+Choose "redirect" if asked. Renewal is automatic (certbot's timer already runs
+for your existing site).
+
+## 7. Verify end-to-end
+
+From your laptop open **https://eudamed.yourdomain.com** → browser login prompt
+(your htpasswd user) → the dashboard, valid padlock.
+```bash
+curl -sI https://eudamed.yourdomain.com | head -n1      # HTTP/2 401 (before auth) is expected
 ```
 
 ---
 
-## 8. Off-box backups (recommended, QMS record-retention)
+## 8. Firewall (only if you run one)
 
-The app already writes scheduled `pg_dump` files into `./backups/` inside the repo
-(every 24 h by default, keeps 30). To survive a VPS loss, copy them off-box —
-e.g. a nightly cron to an EU object store or a second host:
+No new ports are needed — the app is localhost-only and nginx already uses 80/443.
+Just make sure 80 and 443 (and SSH 2222) are allowed; **do not** open 8090 or the
+DB port. If using ufw and it's not configured yet:
+```bash
+sudo ufw allow 2222/tcp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw enable
+```
 
+## 9. Off-box backups (recommended, QMS retention)
+
+The app writes scheduled `pg_dump` files into `./backups/` (every 24 h, keeps 30).
+Mirror them off the VPS so a host loss isn't data loss, e.g.:
 ```bash
 crontab -e
-# 03:30 daily: mirror dumps to a remote (configure rclone first, or use scp/rsync)
 30 3 * * *  rclone sync ~/apps/Eudamed-Fullstack/backups remote:eudamed-backups
 ```
-Record the backup location, schedule and retention in your QMS infrastructure docs.
+Record the backup location, schedule and retention in your QMS docs.
 
-## 9. Updating the app later
+## 10. Updating the app later
 
 ```bash
 cd ~/apps/Eudamed-Fullstack
 git pull
-docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d --build
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
 ```
-Migrations run automatically on start. The `pgdata` volume persists your data
-across rebuilds.
+Migrations run on start; the `pgdata` volume persists your data across rebuilds.
 
-## 10. Operations cheat-sheet
+## 11. Operations cheat-sheet
 
-Prefix is long; set an alias once: `alias dc='docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod'`
+Alias once: `alias dc='docker compose --env-file .env.prod -f docker-compose.prod.yml'`
 
 | Task | Command |
 |---|---|
 | Status | `dc ps` |
-| Logs (all / one) | `dc logs -f` / `dc logs -f app` |
-| Restart app only | `dc restart app` |
-| Stop everything | `dc down` (data volumes kept) |
-| Start again | `dc up -d` |
-| Add a web login | edit `deploy/Caddyfile` (add a `user hash` line), then `dc restart caddy` |
+| Logs (all / app) | `dc logs -f` / `dc logs -f app` |
+| Restart app | `dc restart app` |
+| Stop / start | `dc down` (keeps data) / `dc up -d` |
 | psql shell | `dc exec db psql -U eudamed -d eudamed` |
-| Manual DB dump | `dc exec app pg_dump -h db -U eudamed eudamed > manual-$(date +%F).sql` |
-| Reload Caddy config | `dc restart caddy` |
+| Manual dump | `dc exec app pg_dump -h db -U eudamed eudamed > manual-$(date +%F).sql` |
+| Add a login | `sudo htpasswd /etc/nginx/.htpasswd-eudamed <user>` (no reload needed) |
+| Edit proxy/site | edit `/etc/nginx/sites-available/eudamed` → `sudo nginx -t && sudo systemctl reload nginx` |
 
-## 11. Notes / hardening
+## 12. Notes
 
-- **Do not** add Adminer or a public DB port on this server. Use `dc exec db psql`
-  for ad-hoc queries, or an SSH tunnel (`ssh -L 5433:localhost:5432 ...` won't work
-  since the DB port isn't published — tunnel via `docker exec` or temporarily add a
-  `127.0.0.1:5433:5432` mapping only while you need it).
-- Consider `sudo apt install unattended-upgrades` for automatic security patches.
-- For per-user accountability beyond basic-auth, you can later put an OIDC proxy
-  (Authelia) in front — the same Caddy setup accommodates it.
-- **QMS:** record provider, region/data-centre, OS version (Debian 13), the DPA,
-  and the backup policy in your supplier/infrastructure documentation.
+- The existing static site is untouched — this is an independent server block and
+  an independent Docker stack.
+- **Do not** deploy Adminer or publish the DB port on this server. Use
+  `dc exec db psql` for ad-hoc queries.
+- **QMS:** record provider, region/data-centre, OS version, DPA, and the backup
+  policy in your supplier/infrastructure documentation.
