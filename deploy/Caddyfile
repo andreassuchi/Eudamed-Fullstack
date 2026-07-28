@@ -1,0 +1,27 @@
+# Caddy reverse proxy for the EUDAMED Upload app.
+# Domain, ACME e-mail and the login are injected from .env.prod.
+#
+# Caddy automatically obtains and renews a free Let's Encrypt certificate for
+# EUDAMED_DOMAIN, so no certificate needs to be purchased.
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$EUDAMED_DOMAIN} {
+	encode zstd gzip
+
+	# HTTP basic-auth in front of the whole app (the app itself has no login).
+	# Add more users by adding more "<name> <bcrypt-hash>" lines here and
+	# reloading Caddy. Generate a hash with:
+	#   docker run --rm caddy:2 caddy hash-password --plaintext 'yourpassword'
+	basic_auth {
+		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+	}
+
+	reverse_proxy app:8000
+
+	log {
+		output file /data/access.log
+	}
+}

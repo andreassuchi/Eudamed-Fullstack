@@ -18,6 +18,7 @@ templates/test.xlsx
 
 # Local environment
 .env
+.env.prod
 docker-compose.override.yml
 
 # Editor/OS
