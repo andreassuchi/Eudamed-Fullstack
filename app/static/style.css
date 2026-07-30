@@ -1,20 +1,27 @@
-/* EUDAMED Fullstack — AS-Consult design system
-   Tokens and idiom adapted from AS_Consult/static/style.css */
+/* EUDAMED Fullstack — ASQUMIS design system
+   Palette and idiom aligned with the marketing site (asqumis.de css/site.css)
+   and the sign-in flow on auth.asqumis.de, so the three read as one product.
+
+   The retheme is deliberately confined to these tokens plus the top bar: every
+   layout, table and form rule below is unchanged and simply inherits the new
+   colours. That keeps a visual change from turning into a functional one. */
 :root {
   color-scheme: light dark;
-  --paper: #F5F6F8;
+  --paper: #F4F7FE;        /* tinted, echoing --blue-100 on the marketing site */
   --panel: #FFFFFF;
-  --panel-subtle: #F8FAFC;
-  --ink: #1B2130;
-  --ink-soft: #5B6472;
-  --line: #DCDFE5;
-  --blue: #1D4E89;
-  --blue-deep: #123152;
-  --stamp: #A6373F;
-  --ok: #2F6B3A;
+  --panel-subtle: #F7F9FE;
+  --ink: #06132E;          /* ASQUMIS --ink */
+  --ink-soft: #4A5875;     /* ASQUMIS --grey-700 */
+  --line: #DBE3F4;         /* ASQUMIS --line */
+  --blue: #2F6BFF;         /* ASQUMIS --blue-500, the action colour */
+  --blue-deep: #10307D;    /* ASQUMIS --blue-800 */
+  --cyan: #26E0F5;         /* accent, used sparingly as on the marketing site */
+  --stamp: #B3123B;
+  --ok: #0C6B3F;
   --warn: #8A5A00;
   --mono: Consolas, "SFMono-Regular", Menlo, monospace;
-  --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ease: cubic-bezier(.22,.61,.36,1);
 }
 
 * { box-sizing: border-box; }
@@ -27,44 +34,102 @@ body {
   background: var(--paper);
 }
 
-/* --- top bar ---------------------------------------------------------- */
+/* --- top bar ----------------------------------------------------------
+   Dark bar carrying the ASQUMIS wordmark, matching the marketing site's nav
+   and the sign-in pages rather than the previous light bar. */
 .topbar {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1.5rem;
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
+  padding: 0.85rem 1.5rem;
+  background: var(--ink);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .brand {
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   text-decoration: none;
-  color: var(--blue-deep);
+  color: #fff;
 }
 
+.brand-dot { color: var(--cyan); }
+
 .brand small {
-  font-weight: 400;
-  color: var(--ink-soft);
-  margin-left: 0.4rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.55);
+  margin-left: 0.5rem;
 }
 
 .topbar-links {
   display: flex;
   gap: 1.25rem;
-  margin-left: 1.5rem;
+  margin-left: 2rem;
 }
 
 .topbar-links a {
-  color: var(--ink-soft);
+  color: rgba(255, 255, 255, 0.68);
   text-decoration: none;
   font-size: 0.9rem;
+  font-weight: 600;
+  transition: color 0.18s var(--ease);
 }
 
-.topbar-links a:hover { color: var(--ink); }
+.topbar-links a:hover { color: var(--cyan); }
 
+.topbar-links a.active { color: #fff; }
+
+/* The active tab is marked with a rule rather than weight alone, so it stays
+   legible against the dark bar. */
 .topbar-links a.active {
-  color: var(--blue-deep);
+  box-shadow: inset 0 -2px 0 var(--cyan);
+  padding-bottom: 2px;
+}
+
+/* --- account chip ------------------------------------------------------
+   Only rendered when the reverse proxy supplied an identity. */
+.topbar-account {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-left: auto;
+  padding-left: 1.5rem;
+}
+
+.topbar-user {
+  font-size: 0.82rem;
   font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-signout {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  white-space: nowrap;
+  transition: background-color 0.18s var(--ease), border-color 0.18s var(--ease),
+              color 0.18s var(--ease);
+}
+
+.topbar-signout:hover {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .topbar { flex-wrap: wrap; gap: 0.6rem 1rem; }
+  .topbar-links { margin-left: 0; order: 3; width: 100%; overflow-x: auto; }
+  .topbar-account { padding-left: 0; }
+  .topbar-user { display: none; }
 }
 
 /* --- page frame ------------------------------------------------------- */
@@ -264,28 +329,64 @@ legend {
   padding: 0 0.4rem;
 }
 
-/* --- buttons ------------------------------------------------------------ */
+/* --- buttons ------------------------------------------------------------
+   Pill-shaped and lifting on hover, as on the marketing site. The glow is
+   kept lighter here than on the landing page: this is a working tool with
+   many buttons per screen, and the full marketing glow would be noisy. */
 button, [role="button"] {
   display: inline-block;
-  background: var(--blue-deep);
+  background: var(--blue);
   color: #fff;
-  border: 1px solid var(--blue-deep);
-  border-radius: 4px;
-  padding: 0.45rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
   cursor: pointer;
   text-decoration: none;
   font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(47, 107, 255, 0.22);
+  transition: background-color 0.18s var(--ease), box-shadow 0.18s var(--ease),
+              transform 0.18s var(--ease), color 0.18s var(--ease);
 }
 
-button:hover, [role="button"]:hover { opacity: 0.88; }
+button:hover, [role="button"]:hover {
+  background: #5286FF;
+  box-shadow: 0 4px 14px rgba(82, 134, 255, 0.32);
+  transform: translateY(-1px);
+}
+
+button:active, [role="button"]:active {
+  background: #1E56E0;
+  transform: translateY(0);
+}
+
+button:disabled, [role="button"][aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 
 button.secondary, [role="button"].secondary {
   background: var(--panel);
   color: var(--blue-deep);
   border-color: var(--line);
+  box-shadow: none;
 }
 
-button.outline { padding: 0.15rem 0.55rem; }
+button.secondary:hover, [role="button"].secondary:hover {
+  background: #E4EDFF;
+  border-color: #7FA8FF;
+  color: var(--blue-deep);
+  box-shadow: none;
+}
+
+button.outline { padding: 0.15rem 0.7rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  button, [role="button"] { transition: none; }
+  button:hover, [role="button"]:hover { transform: none; }
+}
 
 /* --- status & severity -------------------------------------------------- */
 .severity-ERROR { color: var(--stamp); font-weight: 600; }
@@ -328,18 +429,35 @@ code {
 /* --- dark mode ----------------------------------------------------------- */
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #17191d;
-    --panel: #1e2126;
-    --panel-subtle: #22262c;
-    --ink: #e7ecf3;
-    --ink-soft: #9aa4b2;
-    --line: #33383f;
-    --blue: #6ea3e0;
-    --blue-deep: #cfe0f4;
-    --ok: #7dc98f;
-    --warn: #e0b35c;
-    --stamp: #e08087;
+    /* Neutrals carry a blue cast so the dark theme still reads as the same
+       brand rather than a generic grey inversion. */
+    --paper: #0B1220;
+    --panel: #141B2B;
+    --panel-subtle: #1A2334;
+    --ink: #E7ECF3;
+    --ink-soft: #9AA7BE;
+    --line: #2A3448;
+    --blue: #5286FF;      /* ASQUMIS --blue-400: readable on dark */
+    --blue-deep: #7FA8FF; /* ASQUMIS --blue-300 */
+    --ok: #4EC27F;
+    --warn: #E0B35C;
+    --stamp: #F0736A;
   }
-  button, [role="button"] { background: var(--blue); color: #12141a; border-color: var(--blue); }
-  button.secondary, [role="button"].secondary { background: var(--panel); color: var(--blue-deep); border-color: var(--line); }
+  /* The top bar is already --ink in both themes, so it needs no override. */
+  button, [role="button"] {
+    background: var(--blue);
+    color: #0B1220;
+    box-shadow: none;
+  }
+  button:hover, [role="button"]:hover { background: #7FA8FF; box-shadow: none; }
+  button:active, [role="button"]:active { background: #2F6BFF; }
+  button.secondary, [role="button"].secondary {
+    background: var(--panel);
+    color: var(--blue-deep);
+    border-color: var(--line);
+  }
+  button.secondary:hover, [role="button"].secondary:hover {
+    background: var(--panel-subtle);
+    border-color: var(--blue-deep);
+  }
 }

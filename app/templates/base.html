@@ -8,8 +8,13 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
+{# The signed-in identity comes from the X-Auth-Email header, which the reverse
+   proxy sets from the auth service and overwrites on every request, so a
+   client cannot forge it. Empty when the app is run without the proxy in
+   front (local development), in which case the account chip is hidden. #}
+{% set auth_email = request.headers.get('x-auth-email', '') %}
 <header class="topbar">
-  <a class="brand" href="/">AS-Consult <small>EUDAMED Registration</small></a>
+  <a class="brand" href="/">ASQUMIS<span class="brand-dot">.</span> <small>EUDAMED Registration</small></a>
   <nav class="topbar-links">
     <a href="/" class="{{ 'active' if request.url.path == '/' else '' }}">Dashboard</a>
     <a href="/basic-udis" class="{{ 'active' if request.url.path.startswith('/basic-udis') else '' }}">Basic UDI-DIs</a>
@@ -19,6 +24,16 @@
     <a href="/registration" class="{{ 'active' if request.url.path.startswith('/registration') else '' }}">Registration status</a>
     <a href="/backups" class="{{ 'active' if request.url.path.startswith('/backups') else '' }}">Backups</a>
   </nav>
+  {% if auth_email %}
+  <div class="topbar-account">
+    <span class="topbar-user" title="{{ auth_email }}">{{ auth_email }}</span>
+    {# Sign-out lives on the auth service — this app owns no session state.
+       The link is a GET to a confirmation page, not the sign-out itself: a
+       plain GET that ended the session could be triggered by any page or by a
+       link prefetcher. #}
+    <a class="topbar-signout" href="https://auth.asqumis.de/logout">Sign out</a>
+  </div>
+  {% endif %}
 </header>
 <main class="page-main">
   <div class="page-frame">
