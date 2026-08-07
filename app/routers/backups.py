@@ -1,9 +1,10 @@
 """Database backup pages: list, manual trigger, download."""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 
+from app.auth import require_admin
 from app.config import settings
 from app.services import backup
 from app.web import templates
@@ -21,12 +22,12 @@ def _ctx(error: str | None = None) -> dict:
 
 
 @router.get("")
-def page(request: Request):
+def page(request: Request, _admin: None = Depends(require_admin)):
     return templates.TemplateResponse(request, "backups/page.html", _ctx())
 
 
 @router.post("/run")
-def run_now(request: Request):
+def run_now(request: Request, _admin: None = Depends(require_admin)):
     try:
         backup.run_backup()
         error = None
@@ -36,7 +37,7 @@ def run_now(request: Request):
 
 
 @router.get("/download/{name}")
-def download(name: str):
+def download(name: str, _admin: None = Depends(require_admin)):
     # only serve files that are actual dumps in the backup dir (no path tricks)
     if "/" in name or "\\" in name or not name.endswith(backup.DUMP_SUFFIX):
         raise HTTPException(404)
