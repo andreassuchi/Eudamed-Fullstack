@@ -50,6 +50,33 @@ def test_parse_non_response():
     assert not parse_response(b"<foo><bar/></foo>").is_response
 
 
+def test_xxe_attack_blocked():
+    """Verify that XXE attacks are blocked by the secure parser."""
+    # Attempt to use an external entity to read a file
+    xxe_payload = b"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<m:Acknowledgement xmlns:m="https://ec.europa.eu/tools/eudamed/dtx/servicemodel/Message/v1">
+  <m:responseEntities>
+    <m:responseEntity>
+      <m:entityCode>&xxe;</m:entityCode>
+      <m:responseCode>SUCCESS</m:responseCode>
+    </m:responseEntity>
+  </m:responseEntities>
+</m:Acknowledgement>"""
+    
+    # The parser should not resolve the entity, so the entity_code should be empty
+    # or the parser should raise an error. Either way, the file content should NOT appear.
+    parsed = parse_response(xxe_payload)
+    # If parsing succeeds, verify that no entity was expanded
+    if parsed.entities:
+        # The entity should not be resolved, so entity_code should be empty or None
+        assert parsed.entities[0].entity_code == "" or parsed.entities[0].entity_code is None
+        # Ensure the file content is NOT present
+        assert "root:" not in str(parsed.entities[0].entity_code)
+
+
 # --- apply + status ---------------------------------------------------------
 
 def test_success_marks_registered_then_modified(db_session, tmp_path):
