@@ -7,7 +7,7 @@ constants (and the XSD package under xsd/). XSD_VERSION must match the
 from __future__ import annotations
 
 # EUDAMED production release this build targets
-EUDAMED_VERSION = "2.27.3"
+EUDAMED_VERSION = "2.27.6"
 
 # DTX data-exchange XSD package version (root Message.xsd fixed attribute)
 DTX_SCHEMA_VERSION = "3.0.30"
