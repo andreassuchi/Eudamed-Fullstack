@@ -35,8 +35,17 @@ def validate_xml(xml_path: str | Path, xsd_dir: Path = XSD_DIR) -> XSDResult:
         return XSDResult(status="SKIPPED",
                          errors=[f"no XSD package found in {xsd_dir} - obtain the official "
                                  "EUDAMED schemas before uploading"])
-    schema = etree.XMLSchema(etree.parse(str(schema_path)))
-    doc = etree.parse(str(xml_path))
+    
+    # Create a secure parser that prevents XXE attacks
+    secure_parser = etree.XMLParser(
+        resolve_entities=False,  # Disable entity expansion to prevent XXE
+        no_network=True,         # Block all network access
+        dtd_validation=False,    # Disable DTD validation
+        load_dtd=False           # Prevent loading external DTDs
+    )
+    
+    schema = etree.XMLSchema(etree.parse(str(schema_path), parser=secure_parser))
+    doc = etree.parse(str(xml_path), parser=secure_parser)
     if schema.validate(doc):
         return XSDResult(status="PASSED", schema_file=str(schema_path))
     return XSDResult(status="FAILED", schema_file=str(schema_path),

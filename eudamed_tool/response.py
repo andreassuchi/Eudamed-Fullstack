@@ -51,12 +51,21 @@ def _localname(el) -> str:
 
 
 def parse_response(source: Union[bytes, str, Path]) -> ParsedResponse:
+    # Create a secure parser that prevents XXE attacks by disabling entity resolution,
+    # network access, and DTD loading
+    secure_parser = etree.XMLParser(
+        resolve_entities=False,  # Disable entity expansion to prevent XXE
+        no_network=True,         # Block all network access
+        dtd_validation=False,    # Disable DTD validation
+        load_dtd=False           # Prevent loading external DTDs
+    )
+    
     if isinstance(source, (str, Path)) and Path(str(source)).exists():
-        root = etree.parse(str(source)).getroot()
+        root = etree.parse(str(source), parser=secure_parser).getroot()
     elif isinstance(source, bytes):
-        root = etree.fromstring(source)
+        root = etree.fromstring(source, parser=secure_parser)
     else:  # raw XML string
-        root = etree.fromstring(str(source).encode("utf-8"))
+        root = etree.fromstring(str(source).encode("utf-8"), parser=secure_parser)
 
     result = ParsedResponse()
     for el in root.iter():
