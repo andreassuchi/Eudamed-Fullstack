@@ -1,5 +1,32 @@
 # Deploying EUDAMED Upload on a subdomain (existing VPS: Docker + host nginx + certbot)
 
+> **⚠️ This production VPS does NOT use this runbook's nginx/published-port
+> setup.** It runs a separate `Auth` app with a containerised **Caddy** reverse
+> proxy on a shared Docker network called `edge`. Every `docker compose` command
+> below for THIS box needs an extra overlay file, or the app container gets
+> disconnected from `edge` and Caddy returns 502 for `eudamed.asqumis.de`:
+> ```bash
+> cd ~/apps/Eudamed-Fullstack
+> docker compose --env-file .env.prod \
+>   -f docker-compose.prod.yml \
+>   -f ~/apps/Auth/deploy/eudamed/docker-compose.edge.yml \
+>   up -d --build
+> ```
+> Add the same pair of `-f` flags to every other compose command for this stack
+> too (`ps`, `logs`, `exec`, `down`) — see §10 and §11 below, and the overlay
+> file's own header comment for why.
+>
+> **Login and TLS are also different on this box.** §4 (htpasswd) and §6
+> (certbot) below do NOT apply here — the `Auth` app's Caddyfile handles both:
+> Caddy gets its certificate for `eudamed.asqumis.de` itself (no certbot step
+> needed), and every request is gated by `forward_auth` to a separate
+> `auth-app` service (password + TOTP, lockout, audit trail) before Caddy
+> proxies it to `eudamed-app:8000` — not the shared htpasswd credential from
+> §4. That Caddyfile block lives in the `Auth` app's repo, not here. §5's
+> nginx server block is also irrelevant on this box for the same reason. The
+> nginx/htpasswd/certbot steps below (§4–§8) describe a different, standalone
+> deployment style (kept so this repo stays deployable on its own elsewhere).
+
 Runbook for a VPS that is **already set up**: Docker is running, host **nginx**
 (systemd) serves a static site, and **certbot** manages Let's Encrypt certs. We
 add the EUDAMED tool as a **new subdomain** without touching the existing site.
@@ -33,7 +60,10 @@ mkdir -p ~/apps && cd ~/apps
 git clone https://github.com/andreassuchi/Eudamed-Fullstack.git
 cd Eudamed-Fullstack
 ```
-(Private repo → use a GitHub PAT as the password, or an SSH deploy key.)
+(Private repo → use a GitHub PAT as the password, or an SSH deploy key. This
+repo is currently **public**, so a plain `git pull` over HTTPS needs no
+credentials — if `git pull` suddenly asks for a username/password on the VPS,
+check whether the repo was switched back to private on GitHub.)
 
 ## 2. Production environment file
 
@@ -56,10 +86,12 @@ automatically, and publishes the app on **127.0.0.1:8090** only.
 
 Verify it's up and *not* public:
 ```bash
-curl -sI http://127.0.0.1:8090/ | head -n1     # expect HTTP/1.1 200
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8090/  # expect 200
 sudo ss -tlnp | grep 8090                        # should show 127.0.0.1:8090, NOT 0.0.0.0
 docker compose -f docker-compose.prod.yml ps      # containers running/healthy
 ```
+(Use a plain GET, not `curl -sI`/HEAD — the app's routes only register `GET` and
+will correctly 405 a HEAD request; that's not a failure.)
 
 ## 4. Create the login (HTTP basic-auth)
 
@@ -133,9 +165,26 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
 ```
 Migrations run on start; the `pgdata` volume persists your data across rebuilds.
 
+> **On this VPS (Caddy/`edge` network — see the warning at the top), always add
+> the edge overlay or the update will take the app offline:**
+> ```bash
+> cd ~/apps/Eudamed-Fullstack
+> git pull
+> docker compose --env-file .env.prod \
+>   -f docker-compose.prod.yml \
+>   -f ~/apps/Auth/deploy/eudamed/docker-compose.edge.yml \
+>   up -d --build
+> ```
+
 ## 11. Operations cheat-sheet
 
-Alias once: `alias dc='docker compose --env-file .env.prod -f docker-compose.prod.yml'`
+Alias once (nginx/standalone box): `alias dc='docker compose --env-file .env.prod -f docker-compose.prod.yml'`
+
+On this VPS (Caddy/`edge`), use this alias instead so every `dc` command below
+keeps the app on the `edge` network:
+```bash
+alias dc='docker compose --env-file .env.prod -f docker-compose.prod.yml -f ~/apps/Auth/deploy/eudamed/docker-compose.edge.yml'
+```
 
 | Task | Command |
 |---|---|
