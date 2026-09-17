@@ -23,5 +23,9 @@ class Settings(BaseSettings):
     backup_keep: int = 30  # retained dump files (oldest deleted first)
     pg_dump_path: str = "pg_dump"
 
+    # authentication for sensitive endpoints (backups)
+    admin_username: str = "admin"
+    admin_password: str = "changeme"  # MUST be changed in production via EUDAMED_ADMIN_PASSWORD
+
 
 settings = Settings()
